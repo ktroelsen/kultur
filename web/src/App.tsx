@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Saved from './pages/Saved';
 import SinceLast from './pages/SinceLast';
+import Taste from './pages/Taste';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -18,6 +19,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<SinceLast />} />
         <Route path="for-you" element={<ForYou />} />
+        <Route path="taste" element={<Taste />} />
         <Route path="saved" element={<Saved />} />
         <Route path="profile" element={<Profile />} />
       </Route>

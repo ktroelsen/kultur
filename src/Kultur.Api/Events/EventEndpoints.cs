@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using Kultur.Api.Auth;
+using Kultur.Api.Taste;
 
 namespace Kultur.Api.Events;
 
 public enum EventView { New, ForYou, Saved }
 
-public record EventItem(CultureEvent Event, Zone Zone, Reaction? Reaction, bool IsNew);
+/// <summary>An event as one user sees it. Score and Because come from the ratings under "Smag".</summary>
+public record EventItem(CultureEvent Event, Zone Zone, Reaction? Reaction, bool IsNew, int Score, Topic? Because, Interest? BecauseRating);
 
 public record EventList(DateTimeOffset? LastVisitUtc, List<EventItem> Events);
 
@@ -15,13 +17,26 @@ public static class EventEndpoints
 {
     public const int MaxEvents = 200;
 
+    /// <summary>Below this many ratings the zone thresholds would hide almost everything, so they wait.</summary>
+    public const int RatingsBeforeZoneThresholds = 10;
+
+    /// <summary>The further away, the better the match must be (docs/koncept.md: afstandszoner).</summary>
+    public static int MinScore(Zone zone) => zone switch
+    {
+        Zone.Copenhagen => int.MinValue,
+        Zone.Denmark => 2,
+        _ => 4,
+    };
+
     public static void MapEventEndpoints(this IEndpointRouteBuilder app)
     {
         var events = app.MapGroup("/api/events").RequireAuthorization();
 
-        // new = arrived since the last visit ("Siden sidst"), forYou = everything not turned down
-        // (nearest zone first; Claude will rank this later), saved = Gem + Måske.
-        events.MapGet("/", async (string? view, ClaimsPrincipal user, EventCatalog catalog, UserData data, CancellationToken ct) =>
+        // new = arrived since the last visit ("Siden sidst"), forYou = what fits the ratings (nearest
+        // zone first, best match first), saved = Gem + Måske. Events turned down – "Nej tak", or a
+        // topic rated "aldrig" – are left out of new and forYou.
+        events.MapGet("/", async (string? view, ClaimsPrincipal user, EventCatalog catalog, UserData data,
+            InterestStore interests, CancellationToken ct) =>
         {
             var parsed = EventView.ForYou;
             if (view is not null && !Enum.TryParse(view, ignoreCase: true, out parsed))
@@ -30,18 +45,33 @@ public static class EventEndpoints
             var userId = Users.Id(user);
             var lastVisit = (await data.StateAsync(userId, ct)).LastVisitUtc;
             var reactions = await data.ReactionsAsync(userId, ct);
+            var ratings = await interests.RatingsAsync(userId, ct);
+            var useZones = ratings.Count >= RatingsBeforeZoneThresholds;
 
-            var items = (await catalog.AllAsync(ct)).Select(e => new EventItem(
-                e,
-                Zones.Of(e.City, e.CountryCode),
-                reactions.TryGetValue(e.Id, out var r) ? r : null,
-                lastVisit is null || e.FirstSeenUtc > lastVisit));
-
-            items = parsed switch
+            var judged = (await catalog.AllAsync(ct)).Select(e =>
             {
-                EventView.New => items.Where(i => i.IsNew && i.Reaction != Reaction.NotInterested),
-                EventView.Saved => items.Where(i => i.Reaction is Reaction.Saved or Reaction.Maybe),
-                _ => items.Where(i => i.Reaction != Reaction.NotInterested).OrderBy(i => i.Zone),
+                var fit = TasteModel.FitOf(e, ratings);
+                var item = new EventItem(
+                    e,
+                    Zones.Of(e.City, e.CountryCode),
+                    reactions.TryGetValue(e.Id, out var r) ? r : null,
+                    lastVisit is null || e.FirstSeenUtc > lastVisit,
+                    fit.Score, fit.Because, fit.BecauseRating);
+                return (Item: item, fit.Hidden);
+            }).ToList();
+
+            bool TurnedDown((EventItem Item, bool Hidden) x) => x.Hidden || x.Item.Reaction == Reaction.NotInterested;
+
+            var items = parsed switch
+            {
+                EventView.New => judged.Where(x => x.Item.IsNew && !TurnedDown(x)).Select(x => x.Item),
+                EventView.Saved => judged.Where(x => x.Item.Reaction is Reaction.Saved or Reaction.Maybe).Select(x => x.Item),
+                _ => judged
+                    .Where(x => !TurnedDown(x))
+                    .Where(x => !useZones || x.Item.Reaction is not null || x.Item.Score >= MinScore(x.Item.Zone))
+                    .Select(x => x.Item)
+                    .OrderBy(i => i.Zone)
+                    .ThenByDescending(i => i.Score),
             };
             return Results.Ok(new EventList(lastVisit, items.Take(MaxEvents).ToList()));
         });

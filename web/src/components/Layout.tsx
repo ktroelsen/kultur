@@ -1,4 +1,4 @@
-import { Bookmark, Heart, LogOut, Sparkles, UserRound, type LucideIcon } from 'lucide-react';
+import { Bookmark, Heart, LogOut, SlidersHorizontal, Sparkles, UserRound, type LucideIcon } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router';
 import { useAuth } from '../auth';
 import Logo from './Logo';
@@ -6,6 +6,7 @@ import Logo from './Logo';
 const nav: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/', label: 'Siden sidst', icon: Sparkles },
   { to: '/for-you', label: 'Til dig', icon: Heart },
+  { to: '/taste', label: 'Smag', icon: SlidersHorizontal },
   { to: '/saved', label: 'Gemt', icon: Bookmark },
   { to: '/profile', label: 'Dig', icon: UserRound },
 ];
@@ -48,7 +49,7 @@ export default function Layout() {
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
         {nav.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

@@ -4,6 +4,7 @@ using Kultur.Api.Auth;
 using Kultur.Api.Events;
 using Kultur.Api.Profile;
 using Kultur.Api.Scan;
+using Kultur.Api.Taste;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
@@ -20,6 +21,7 @@ var usersDir = Path.Combine(dataDir, "users");
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(sp => new EventCatalog(Path.Combine(dataDir, "events.json"), sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(sp => new UserData(usersDir, sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddSingleton(sp => new InterestStore(usersDir, sp.GetRequiredService<TimeProvider>()));
 
 // Event sources, scanned nightly (POST /api/scan). Each is skipped while it lacks its key.
 builder.Services.AddSingleton<ScanGate>();
@@ -99,6 +101,7 @@ app.MapAuthEndpoints();
 app.MapEventEndpoints();
 app.MapProfileEndpoints(usersDir);
 app.MapScanEndpoints();
+app.MapTasteEndpoints();
 
 // Unknown /api routes are real 404s; everything else is a client-side route → index.html.
 app.MapFallback("/api/{**rest}", () => Results.NotFound());

@@ -9,6 +9,10 @@ Kører på https://kultur.kaspert.dk. Konceptet står i [`docs/koncept.md`](docs
 - **Siden sidst** (forside): arrangementer, der er dukket op siden sidste besøg.
 - **Til dig**: alle kommende arrangementer, jeg ikke har sagt nej tak til, delt i afstandszoner
   (København, resten af Danmark, udlandet) og med filter på kategori.
+- **Smag**: ét emne ad gangen – kategori, genre, kunstner/hold eller spillested – vurderet fra
+  *aldrig* til *meget* (eller sprunget over). Vurderingerne skjuler det, du aldrig vil, sorterer
+  "Til dig" efter, hvor godt det passer, og hvert forslag siger hvorfor ("Du sagde 'meget' til …").
+  Efter 10 vurderinger skal arrangementer uden for København passe bedre for at komme med.
 - **Gem / Måske / Nej tak** på hvert arrangement; **Gemt** viser de gemte. Billetsalg, der ikke er
   startet endnu, fremhæves.
 - **Dig** ("Det tror jeg om dig"): smagsprofilen med egne ord, for kultur og for sport. Og knappen
@@ -27,7 +31,8 @@ POC: én bruger med ét kodeord, ingen database (JSON-filer i `App_Data`, person
 | Backend | ASP.NET Core minimal API, .NET 10 (`src/Kultur.Api`) |
 | Frontend | React 19 + Vite + Tailwind 4, installerbar PWA (`web/`) |
 | Kilder | `IEventSource` i `src/Kultur.Api/Scan/` – i dag `TicketmasterSource` |
-| Data | `EventCatalog` (`App_Data/events.json`), `UserData` (reaktioner, sidste besøg), profil |
+| Data | `EventCatalog` (`App_Data/events.json`), `UserData` (reaktioner, sidste besøg), `InterestStore` (vurderinger), profil |
+| Smag | `TasteModel` (`src/Kultur.Api/Taste/`): emner pr. arrangement, point og "hvorfor" |
 | Hosting | Simply (IIS, self-contained win-x86) – se [`docs/simply-deploy.md`](docs/simply-deploy.md) |
 
 ## Udvikling

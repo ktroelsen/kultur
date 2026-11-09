@@ -1,6 +1,6 @@
-import { Bookmark, CircleHelp, ExternalLink, Ticket, X } from 'lucide-react';
-import { categoryNames, type EventItem, type Reaction } from '../api';
-import { price, upcomingSale, when, where } from '../format';
+import { Bookmark, CircleHelp, ExternalLink, Heart, Ticket, X } from 'lucide-react';
+import { categoryNames, interestNames, type EventItem, type Reaction } from '../api';
+import { genreName, price, topicName, upcomingSale, when, where } from '../format';
 
 const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = [
   { reaction: 'Saved', label: 'Gem', icon: Bookmark },
@@ -9,7 +9,7 @@ const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = 
 ];
 
 export default function EventCard({ item, onReact }: { item: EventItem; onReact: (reaction: Reaction | null) => void }) {
-  const { event: e, reaction } = item;
+  const { event: e, reaction, because, becauseRating } = item;
   const sale = upcomingSale(e);
   const cost = price(e);
 
@@ -19,7 +19,7 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
       <div className="p-4">
         <p className="text-xs font-medium tracking-wide text-accent uppercase">
           {categoryNames[e.category]}
-          {e.genre && <span className="text-muted"> · {e.genre}</span>}
+          {e.genre && <span className="text-muted"> · {genreName(e.genre)}</span>}
         </p>
         <h3 className="mt-1 text-lg leading-snug font-semibold">{e.title}</h3>
         <p className="mt-1 text-sm text-muted">{when(e)}</p>
@@ -27,6 +27,12 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
           {where(e)}
           {cost && <span> · {cost}</span>}
         </p>
+        {because && becauseRating && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
+            <Heart className="h-4 w-4 text-accent" />
+            Du sagde “{interestNames[becauseRating].toLowerCase()}” til {topicName(because)}
+          </p>
+        )}
         {sale && (
           <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-accent/15 px-2 py-1 text-sm font-medium text-accent">
             <Ticket className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import type { CultureEvent } from './api';
+import { categoryNames, type Category, type CultureEvent, type Topic } from './api';
 
 const dayFormat = new Intl.DateTimeFormat('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const timeFormat = new Intl.DateTimeFormat('da-DK', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Copenhagen' });
@@ -29,4 +29,25 @@ export function upcomingSale(e: CultureEvent, now = new Date()) {
   if (!e.saleStart) return null;
   const start = new Date(e.saleStart);
   return start > now ? saleFormat.format(start) : null;
+}
+
+// Ticketmaster's genre names are English; the common ones in Danish.
+const genres: Record<string, string> = {
+  Football: 'Fodbold', Soccer: 'Fodbold', Handball: 'Håndbold', 'Ice Hockey': 'Ishockey', Hockey: 'Ishockey',
+  Motorsports: 'Motorsport', 'Motorsports/Racing': 'Motorsport', Cycling: 'Cykling', Equestrian: 'Ridesport',
+  Athletics: 'Atletik', Boxing: 'Boksning', 'Martial Arts': 'Kampsport', Wrestling: 'Wrestling', Golf: 'Golf',
+  Theatre: 'Teater', "Children's Theatre": 'Børneteater', Comedy: 'Stand-up', Dance: 'Dans', Classical: 'Klassisk',
+  'Fine Art': 'Kunst', 'Performance Art': 'Performance', Family: 'Familie', Circus: 'Cirkus', Magic: 'Magi',
+  'Magic & Illusion': 'Magi', Spectacular: 'Show', Electronic: 'Elektronisk',
+  Alternative: 'Alternativ', World: 'Verdensmusik', Folk: 'Folkemusik', Religious: 'Religiøs musik',
+  Miscellaneous: 'Diverse', Lectures: 'Foredrag', 'Lecture/Seminar': 'Foredrag',
+};
+
+export const genreName = (genre: string) => genres[genre] ?? genre;
+
+/** A topic's name for people: categories and genres in Danish, performers and venues as they are. */
+export function topicName(t: Pick<Topic, 'kind' | 'name'>) {
+  if (t.kind === 'Category') return categoryNames[t.name as Category] ?? t.name;
+  if (t.kind === 'Genre') return genreName(t.name);
+  return t.name;
 }

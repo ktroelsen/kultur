@@ -43,6 +43,12 @@ To dele, fordi smag i kultur og sport opfører sig forskelligt:
 
 Signaler: **Gem**, **Måske**, **Nej tak**; senere **Jeg var der** og **Det var godt**.
 
+**Smag** (bygget): en side, hvor emner kommer ét ad gangen – kategori, genre, kunstner/hold,
+spillested – og vurderes fra *aldrig* til *meget*. Man kigger ind en gang imellem og tager et par
+stykker. Først de brede kategorier; derefter skiftes mellem genrer, kunstnere (dobbelt så ofte) og
+steder, de største først. Har man sagt *aldrig* til sport, spørges der ikke om fodboldklubber.
+Vurderingerne giver point til arrangementerne, skjuler fravalgte og forklarer forslagene.
+
 Profilen gemmes som JSON + en kort tekst i naturligt sprog, som Claude vedligeholder. Siden
 **"Det tror jeg om dig"** viser profilen, og den kan rettes direkte. Hvert forslag har en
 begrundelse ("fordi du gemte Agnes Obel og har været på Vega to gange").
