@@ -28,6 +28,13 @@ builder.Services.AddSingleton<ScanGate>();
 builder.Services.Configure<TicketmasterOptions>(builder.Configuration.GetSection("Ticketmaster"));
 builder.Services.AddHttpClient<TicketmasterSource>(c => c.Timeout = TimeSpan.FromSeconds(30));
 builder.Services.AddTransient<IEventSource>(sp => sp.GetRequiredService<TicketmasterSource>());
+builder.Services.Configure<OriginalTalksOptions>(builder.Configuration.GetSection("OriginalTalks"));
+builder.Services.AddHttpClient<OriginalTalksSource>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(30);
+    c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; Kultur/1.0; +https://kultur.kaspert.dk)");
+});
+builder.Services.AddTransient<IEventSource>(sp => sp.GetRequiredService<OriginalTalksSource>());
 
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
