@@ -11,7 +11,8 @@ public record EventItem(CultureEvent Event, Zone Zone, Reaction? Reaction, bool 
 
 public record EventList(DateTimeOffset? LastVisitUtc, List<EventItem> Events);
 
-public record ReactionRequest(Reaction? Reaction);
+/// <summary>Reason only goes with NotInterested: Date hides the whole day, Event every date of the event.</summary>
+public record ReactionRequest(Reaction? Reaction, DismissReason? Reason = null);
 
 public static class EventEndpoints
 {
@@ -45,16 +46,24 @@ public static class EventEndpoints
             var userId = Users.Id(user);
             var lastVisit = (await data.StateAsync(userId, ct)).LastVisitUtc;
             var reactions = await data.ReactionsAsync(userId, ct);
+            var learning = await data.LearningAsync(userId, ct);
+            var learned = learning.Signals();
             var ratings = await interests.RatingsAsync(userId, ct);
             var useZones = ratings.Count >= RatingsBeforeZoneThresholds;
 
             var judged = (await catalog.AllAsync(ct)).Select(e =>
             {
-                var fit = TasteModel.FitOf(e, ratings);
+                var fit = TasteModel.FitOf(e, ratings, learned);
+                // Dates of a series turned down, and everything on a busy day, count as "Nej tak" too –
+                // also events found later. A reaction of the event's own always wins.
+                Reaction? reaction = reactions.TryGetValue(e.Id, out var r) ? r
+                    : learning.DismissedSeries.ContainsKey(Series.KeyOf(e)) ? Reaction.NotInterested
+                    : e.Date is { } d && learning.BusyDays.ContainsKey(d.ToString("yyyy-MM-dd")) ? Reaction.NotInterested
+                    : null;
                 var item = new EventItem(
                     e,
                     Zones.Of(e.City, e.CountryCode),
-                    reactions.TryGetValue(e.Id, out var r) ? r : null,
+                    reaction,
                     lastVisit is null || e.FirstSeenUtc > lastVisit,
                     fit.Score, fit.Because, fit.BecauseRating);
                 return (Item: item, fit.Hidden);
@@ -82,12 +91,16 @@ public static class EventEndpoints
             return Results.NoContent();
         });
 
-        // Gem / Måske / Nej tak; null takes the reaction back.
+        // Gem / Måske / Nej tak (with why); null takes the reaction back.
         events.MapPut("/{id}/reaction", async (string id, ReactionRequest body, ClaimsPrincipal user,
             EventCatalog catalog, UserData data, CancellationToken ct) =>
         {
-            if (await catalog.GetAsync(id, ct) is null) return Results.NotFound();
-            await data.SetReactionAsync(Users.Id(user), id, body.Reaction, ct);
+            if (await catalog.GetAsync(id, ct) is not { } e) return Results.NotFound();
+            if (body.Reason is not null && body.Reaction != Reaction.NotInterested)
+                return Results.Problem("En begrundelse hører kun til \"Nej tak\".", statusCode: 400);
+            if (body.Reason == DismissReason.Place)
+                return Results.Problem("\"Stedet\" er ikke længere en begrundelse.", statusCode: 400);
+            await data.SetReactionAsync(Users.Id(user), e, body.Reaction, body.Reason, ct);
             return Results.NoContent();
         });
     }
