@@ -16,7 +16,8 @@ hver nat 02:17 UTC ─► Nightly scan ─► POST https://kultur.kaspert.dk/api
 - **`deploy.yml`**: bygger frontend ind i `wwwroot`, publisher self-contained win-x86, skriver
   `appsettings.Production.json` fra secrets og synkroniserer med `msdeploy -verb:sync -enableRule:AppOffline`.
   **Sync sletter alt på sitet, der ikke er i build'et** (undtagen `App_Data` og `logs`). Derfor
-  stopper jobbet, hvis `SIMPLY_WEBDEPLOY_SITE` ikke er præcis `kultur.kaspert.dk`.
+  stopper jobbet, hvis en af Web Deploy-secrets mangler, eller hvis `SIMPLY_WEBDEPLOY_SITE` ikke er
+  præcis `kultur.kaspert.dk`.
 - **`scan.yml`**: natlig scanning (IIS genbruger app-poolen, så der er ingen baggrundstjeneste).
   Kan også startes manuelt under Actions, eller med "Led efter nyt nu" i appen.
 - **`claude.yml`**: svarer på `@claude` i issues og PR-kommentarer.
@@ -31,7 +32,7 @@ hver nat 02:17 UTC ─► Nightly scan ─► POST https://kultur.kaspert.dk/api
 | `SIMPLY_WEBDEPLOY_URL` | serveren (som for read) | msdeploy (`https://<url>:8172/msdeploy.axd`), uden `https://` og port |
 | `SIMPLY_WEBDEPLOY_SITE` | `kultur.kaspert.dk` | **IIS-sitet, der overskrives.** Andre værdier afvises af workflowet. |
 | `SIMPLY_WEBDEPLOY_USERNAME` | (fra Simply, for kultur-sitet) | Web Deploy-login |
-| `SIMPLY_WEBDEPLOY_PASSEORD` | (fra Simply) | Web Deploy-adgangskode (stavet med E, som i read) |
+| `SIMPLY_WEBDEPLOY_PASSWORD` | (fra Simply) | Web Deploy-adgangskode (korrekt stavet – i read hedder den `PASSEORD`) |
 | `KULTUR_PASSWORD` | valgfrit kodeord | Login i appen |
 | `KULTUR_SCAN_KEY` | lang tilfældig streng | Den natlige scanning (`X-Scan-Key`) |
 | `TICKETMASTER_API_KEY` | "Consumer Key" fra developer.ticketmaster.com | Ticketmaster-kilden. Uden den springes kilden over. |

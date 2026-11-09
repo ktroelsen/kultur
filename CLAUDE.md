@@ -14,6 +14,6 @@
 - Hosting er Simply (IIS, 32-bit, shared, self-contained win-x86) på kultur.kaspert.dk – samme opsætning som read.kaspert.dk.
 - Se `docs/simply-deploy.md` for secrets og første deploy.
 - Deploy synkroniserer hele sitet og sletter alt, der ikke er i build'et (undtagen `App_Data` og `logs`). `SIMPLY_WEBDEPLOY_SITE` afgør, hvilket site der overskrives – ret aldrig den eller `_URL` uden at brugeren bekræfter værdierne. `deploy.yml` afviser andre sites end `kultur.kaspert.dk` – fjern ikke det værn.
-- Hemmeligheder kommer fra GitHub Secrets (environment `Production`) → `appsettings.Production.json` i deploy-workflowet. Aldrig i repoet. Navnene `SIMPLY_WEBDEPLOY_PASSEORD` og `CLAUDE_CODE_0AUTH_TOKEN` er stavet sådan med vilje (de matcher secrets i read-repoet) – "ret" dem ikke.
+- Hemmeligheder kommer fra GitHub Secrets (environment `Production`) → `appsettings.Production.json` i deploy-workflowet. Aldrig i repoet. Her hedder Web Deploy-adgangskoden `SIMPLY_WEBDEPLOY_PASSWORD` (korrekt stavet – i read-repoet er den stavet `PASSEORD`), mens `CLAUDE_CODE_0AUTH_TOKEN` er stavet med 0 som i read. Navnene skal matche de oprettede secrets – ret dem ikke uden at brugeren bekræfter.
 - Simplys firewall (ModSecurity) afviser curl med 455; brug `curl -A "Mozilla/5.0" …` ved røgtest.
 - Arbejdsgang: branch → PR → CI grøn → merge → auto-deploy.
