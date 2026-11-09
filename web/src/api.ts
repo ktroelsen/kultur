@@ -36,7 +36,7 @@ export function errorMessage(err: unknown, fallback = 'Noget gik galt. Prøv ige
 
 export type Me = { name: string };
 
-export type Category = 'Music' | 'Theatre' | 'Comedy' | 'Film' | 'Sport' | 'Other';
+export type Category = 'Music' | 'Theatre' | 'Comedy' | 'Talk' | 'Film' | 'Sport' | 'Running' | 'Other';
 export type Zone = 'Copenhagen' | 'Denmark' | 'Abroad';
 export type Reaction = 'Saved' | 'Maybe' | 'NotInterested';
 export type EventView = 'new' | 'forYou' | 'saved';
@@ -112,8 +112,10 @@ export const categoryNames: Record<Category, string> = {
   Music: 'Musik',
   Theatre: 'Teater',
   Comedy: 'Stand-up',
+  Talk: 'Foredrag',
   Film: 'Film',
   Sport: 'Sport',
+  Running: 'Løb',
   Other: 'Andet',
 };
 

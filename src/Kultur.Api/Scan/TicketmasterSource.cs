@@ -176,8 +176,14 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
         }
     }
 
-    static Category CategoryOf(string? segment, string? genre) => segment switch
+    // Talks and runs have no segment of their own at Ticketmaster; they're told apart by genre.
+    static readonly HashSet<string> TalkGenres = ["Lecture/Seminar", "Lectures", "Spoken Word", "Lecture"];
+    static readonly HashSet<string> RunningGenres = ["Running", "Marathon"];
+
+    public static Category CategoryOf(string? segment, string? genre) => segment switch
     {
+        _ when genre is not null && TalkGenres.Contains(genre) => Category.Talk,
+        _ when genre is not null && RunningGenres.Contains(genre) => Category.Running,
         "Music" => Category.Music,
         "Sports" => Category.Sport,
         "Film" => Category.Film,

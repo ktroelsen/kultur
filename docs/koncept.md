@@ -1,7 +1,7 @@
 # Kultur – koncept
 
 En personlig app, der **finder**, **forstår** og **holder øje med** oplevelser: koncerter, teater,
-stand-up, film-særvisninger, udendørs/sommerspil og sport. Over tid lærer den, hvad jeg er
+stand-up, foredrag, film-særvisninger, udendørs/sommerspil, sport og løb. Over tid lærer den, hvad jeg er
 interesseret i. Kører på https://kultur.kaspert.dk i samme stil og teknologi som Læs højt
 (`ktroelsen/read`).
 
@@ -83,6 +83,15 @@ festivaler og IMAX-events tages med i første omgang.
 
 **Videresalg:** når et gemt arrangement er udsolgt, kan appen henvise til officielt videresalg
 (fanSALE, Ticketmaster Resale) – kun links.
+
+## Foredrag og løb
+
+- **Foredrag** (fx Original Talks) er en kategori for sig; Ticketmasters "Lecture/Seminar" og
+  "Spoken Word" lander her.
+- **Løb** – motionsløb i Danmark og store løb i udlandet (fx Berlin Marathon) – er også en kategori.
+  For løb er *tilmeldingsstart* (eller lodtrækning) det, der svarer til billetsalg, og de ligger ofte
+  langt ude i fremtiden, så de skal hentes mere end 12 måneder frem. Kilder: løbenes egne sider og
+  danske tilmeldingssystemer (*skal undersøges*).
 
 ## Overvågninger
 
