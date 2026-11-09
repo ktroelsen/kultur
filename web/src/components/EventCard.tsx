@@ -27,6 +27,7 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
           {where(e)}
           {cost && <span> · {cost}</span>}
         </p>
+        {e.note && <p className="mt-2 text-sm">{e.note}</p>}
         {because && becauseRating && (
           <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
             <Heart className="h-4 w-4 text-accent" />
@@ -36,7 +37,7 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
         {sale && (
           <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-accent/15 px-2 py-1 text-sm font-medium text-accent">
             <Ticket className="h-4 w-4" />
-            Billetsalg starter {sale}
+            {e.category === 'Running' ? 'Tilmelding åbner' : 'Billetsalg starter'} {sale}
           </p>
         )}
 
@@ -63,7 +64,7 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
             rel="noreferrer"
             className="ml-auto flex items-center gap-1 text-sm text-accent hover:underline"
           >
-            Billetter
+            {e.category === 'Running' ? 'Løbets side' : 'Billetter'}
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>

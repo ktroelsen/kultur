@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Threading.RateLimiting;
+using Kultur.Api.Ai;
 using Kultur.Api.Auth;
 using Kultur.Api.Events;
 using Kultur.Api.Profile;
@@ -35,6 +36,16 @@ builder.Services.AddHttpClient<OriginalTalksSource>(c =>
     c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; Kultur/1.0; +https://kultur.kaspert.dk)");
 });
 builder.Services.AddTransient<IEventSource>(sp => sp.GetRequiredService<OriginalTalksSource>());
+
+// Claude: looks up big races on the web once a week. Without Ai:ApiKey that source is skipped.
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
+builder.Services.AddHttpClient("anthropic", c => c.Timeout = TimeSpan.FromMinutes(5));
+builder.Services.AddSingleton(sp => AiOptions.CreateClient(
+    sp.GetRequiredService<IOptions<AiOptions>>().Value,
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("anthropic")));
+builder.Services.Configure<RunsOptions>(builder.Configuration.GetSection("Runs"));
+builder.Services.AddSingleton(new StatePath(Runs: Path.Combine(dataDir, "runs.json")));
+builder.Services.AddTransient<IEventSource, RunsSource>();
 
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
@@ -95,12 +106,13 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/api/health", (IOptions<TicketmasterOptions> ticketmaster, IConfiguration config) => Results.Ok(new
+app.MapGet("/api/health", (IOptions<TicketmasterOptions> ticketmaster, IOptions<AiOptions> ai, IConfiguration config) => Results.Ok(new
 {
     status = "ok",
     version = typeof(Program).Assembly
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "dev",
     ticketmaster = ticketmaster.Value.Configured,
+    ai = ai.Value.Configured,
     scanKey = !string.IsNullOrEmpty(config["Scan:Key"]),
 }));
 
