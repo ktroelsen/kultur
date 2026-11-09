@@ -40,7 +40,10 @@ public static class TasteModel
         if (!string.IsNullOrWhiteSpace(e.Venue)) yield return new Topic(TopicKind.Venue, e.Venue.Trim());
     }
 
-    public static Fit FitOf(CultureEvent e, IReadOnlyDictionary<string, Interest> ratings)
+    /// <param name="learned">What the Gem / Måske / Nej tak buttons taught, per topic in rating steps
+    /// (−2…+2). Used only for topics without a rating of their own: a rating always wins.</param>
+    public static Fit FitOf(CultureEvent e, IReadOnlyDictionary<string, Interest> ratings,
+        IReadOnlyDictionary<string, double>? learned = null)
     {
         var rated = TopicsOf(e)
             .Select(t => (Topic: t, Rating: ratings.TryGetValue(t.Key, out var r) ? r : (Interest?)null))
@@ -54,6 +57,13 @@ public static class TasteModel
         var hidden = rated.Any(x => x.Rating == Interest.Never && (x.Topic.Kind == TopicKind.Performer || !lovedPerformer));
 
         var score = rated.Sum(x => Weight(x.Topic.Kind) * ((int)x.Rating - (int)Interest.Maybe));
+        if (learned is not null)
+        {
+            score += (int)Math.Round(TopicsOf(e)
+                .Where(t => !ratings.ContainsKey(t.Key) && learned.ContainsKey(t.Key))
+                .DistinctBy(t => t.Key)
+                .Sum(t => Weight(t.Kind) * learned[t.Key]));
+        }
         var because = rated
             .Where(x => x.Rating >= Interest.Gladly)
             .OrderByDescending(x => Weight(x.Topic.Kind) * (int)x.Rating)

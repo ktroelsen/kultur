@@ -39,6 +39,8 @@ export type Me = { name: string };
 export type Category = 'Music' | 'Theatre' | 'Comedy' | 'Talk' | 'Film' | 'Sport' | 'Running' | 'Other';
 export type Zone = 'Copenhagen' | 'Denmark' | 'Abroad';
 export type Reaction = 'Saved' | 'Maybe' | 'NotInterested';
+/** Why "Nej tak": this place (only this date), or the event itself (every date). */
+export type DismissReason = 'Place' | 'Event';
 export type EventView = 'new' | 'forYou' | 'saved';
 
 export type CultureEvent = {
@@ -129,5 +131,5 @@ export const zoneNames: Record<Zone, string> = {
 
 export const fetchEvents = (view: EventView) => api<EventList>(`/api/events?view=${view}`);
 
-export const setReaction = (id: string, reaction: Reaction | null) =>
-  api<void>(`/api/events/${encodeURIComponent(id)}/reaction`, { method: 'PUT', json: { reaction } });
+export const setReaction = (id: string, reaction: Reaction | null, reason: DismissReason | null = null) =>
+  api<void>(`/api/events/${encodeURIComponent(id)}/reaction`, { method: 'PUT', json: { reaction, reason } });

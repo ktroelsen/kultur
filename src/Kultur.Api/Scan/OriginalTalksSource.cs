@@ -182,7 +182,8 @@ public partial class OriginalTalksSource(HttpClient http, IOptions<OriginalTalks
             SaleStart: null,
             ImageUrl: null,
             FirstSeenUtc: now,
-            Performers: Speakers(Str(o, "speaker")));
+            Performers: Speakers(Str(o, "speaker")),
+            Series: o.TryGetProperty("event_group_id", out var g) && g.ValueKind == JsonValueKind.Number ? $"originaltalks:{g.GetRawText()}" : null);
     }
 
     /// <summary>"Glenn Bech og Dorte Bech Møldrup" → both names.</summary>

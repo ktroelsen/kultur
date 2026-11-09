@@ -187,7 +187,8 @@ public partial class RunsSource(AnthropicClient client, IOptions<AiOptions> ai, 
             ImageUrl: null,
             FirstSeenUtc: now,
             Performers: [race.Name],
-            Note: string.IsNullOrWhiteSpace(e.Registration) ? null : e.Registration.Trim());
+            Note: string.IsNullOrWhiteSpace(e.Registration) ? null : e.Registration.Trim(),
+            Series: $"runs:{Slug(race.Name)}");
     }
 
     static string Slug(string name) => SlugChars().Replace(name.ToLowerInvariant().Replace("ø", "oe").Replace("æ", "ae").Replace("å", "aa"), "-").Trim('-');

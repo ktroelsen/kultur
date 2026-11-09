@@ -1,5 +1,6 @@
 import { Bookmark, CircleHelp, ExternalLink, Heart, Ticket, X } from 'lucide-react';
-import { categoryNames, interestNames, type EventItem, type Reaction } from '../api';
+import { useState } from 'react';
+import { categoryNames, interestNames, type DismissReason, type EventItem, type Reaction } from '../api';
 import { genreName, price, topicName, upcomingSale, when, where } from '../format';
 
 const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = [
@@ -8,7 +9,14 @@ const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = 
   { reaction: 'NotInterested', label: 'Nej tak', icon: X },
 ];
 
-export default function EventCard({ item, onReact }: { item: EventItem; onReact: (reaction: Reaction | null) => void }) {
+export default function EventCard({
+  item,
+  onReact,
+}: {
+  item: EventItem;
+  onReact: (reaction: Reaction | null, reason?: DismissReason | null) => void;
+}) {
+  const [askWhy, setAskWhy] = useState(false);
   const { event: e, reaction, because, becauseRating } = item;
   const sale = upcomingSale(e);
   const cost = price(e);
@@ -41,13 +49,35 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
           </p>
         )}
 
+        {askWhy ? (
+          <div className="mt-4">
+            <p className="text-sm text-muted">Hvorfor nej tak?</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                onClick={() => { setAskWhy(false); onReact('NotInterested', 'Place'); }}
+                className="rounded-full border border-line px-3 py-1.5 text-sm hover:border-accent hover:text-accent"
+              >
+                Stedet – kun denne dato
+              </button>
+              <button
+                onClick={() => { setAskWhy(false); onReact('NotInterested', 'Event'); }}
+                className="rounded-full border border-line px-3 py-1.5 text-sm hover:border-accent hover:text-accent"
+              >
+                Arrangementet – alle datoer
+              </button>
+              <button onClick={() => setAskWhy(false)} className="px-2 py-1.5 text-sm text-muted hover:text-fg">
+                Fortryd
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {choices.map(({ reaction: r, label, icon: Icon }) => {
             const active = reaction === r;
             return (
               <button
                 key={r}
-                onClick={() => onReact(active ? null : r)}
+                onClick={() => (r === 'NotInterested' && !active ? setAskWhy(true) : onReact(active ? null : r))}
                 aria-pressed={active}
                 className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition ${
                   active ? 'border-accent bg-accent text-on-accent' : 'border-line text-muted hover:text-fg'
@@ -68,6 +98,7 @@ export default function EventCard({ item, onReact }: { item: EventItem; onReact:
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
+        )}
       </div>
     </article>
   );

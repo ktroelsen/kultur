@@ -80,6 +80,7 @@ public class OriginalTalksTests
         Assert.Equal("https://www.originaltalks.dk/events/simon-hoegmark-vi-er-natur-1015/11306-koebenhavn-2026-11-11", cph.Url);
         Assert.Equal(["Simon Høegmark"], cph.Performers!);
         Assert.Null(cph.ImageUrl); // their pictures stay theirs
+        Assert.Equal("originaltalks:1015", cph.Series);
 
         Assert.Equal("https://billet.musikhuset.dk/x", events[1].Url); // sold by the venue
     }
