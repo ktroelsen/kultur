@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Semantic colour tokens; light mode swaps their values (see below), so components only
+   use bg-ink / bg-surface / text-fg / text-muted / border-line / accent. */
+@theme {
+  --color-ink: #120f17;
+  --color-surface: #1b1722;
+  --color-surface-2: #241e2e;
+  --color-line: #352d42;
+  --color-fg: #f3effa;
+  --color-muted: #a59cb4;
+  --color-accent: #c4a1ff;
+  --color-accent-strong: #ab7dfc;
+  --color-on-accent: #1a0f2e;
+  --color-danger: #f87171;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-ink: #f8f6fb;
+    --color-surface: #ffffff;
+    --color-surface-2: #efeaf6;
+    --color-line: #e0d8ec;
+    --color-fg: #1c1724;
+    --color-muted: #675d77;
+    --color-accent: #6d3fd1;
+    --color-accent-strong: #5a2fb8;
+    --color-on-accent: #ffffff;
+    --color-danger: #b91c1c;
+  }
+}
+
+:root {
+  color-scheme: light dark; /* native scrollbars and form controls follow the theme */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-ink text-fg antialiased;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
