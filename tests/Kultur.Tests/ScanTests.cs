@@ -155,7 +155,7 @@ public class ScanTests
         var res = await client.PostAsync("/api/scan", null);
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
         var result = await res.Content.ReadAsync<ScanResult>();
-        var tm = Assert.Single(result!.Sources);
+        var tm = result!.Sources.Single(s => s.Source == "ticketmaster");
         Assert.NotNull(tm.Error);
         Assert.DoesNotContain("tm-key", tm.Error); // the key is in the URL; it must not leak
     }
@@ -168,7 +168,7 @@ public class ScanTests
         factory.Ticketmaster.Body = """{"fault":{"faultstring":"Invalid ApiKey","detail":{"errorcode":"oauth.v2.InvalidApiKey"}}}""";
         var client = await factory.LoggedInClientAsync();
         var result = await (await client.PostAsync("/api/scan", null)).Content.ReadAsync<ScanResult>();
-        Assert.Equal("Ticketmaster svarede 401: Invalid ApiKey", Assert.Single(result!.Sources).Error);
+        Assert.Equal("Ticketmaster svarede 401: Invalid ApiKey", result!.Sources.Single(s => s.Source == "ticketmaster").Error);
     }
 
     [Theory]

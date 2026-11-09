@@ -25,6 +25,22 @@ public class FakeTicketmaster : HttpMessageHandler
     }
 }
 
+// Stand-in for www.originaltalks.dk: fixed pages by URL, everything else 404.
+public class FakeSite : HttpMessageHandler
+{
+    public Dictionary<string, string> Pages { get; } = [];
+    public List<string> Requested { get; } = [];
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken ct)
+    {
+        var url = req.RequestUri!.ToString();
+        lock (Requested) Requested.Add(url);
+        return Task.FromResult(Pages.TryGetValue(url, out var body)
+            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "text/html") }
+            : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("") });
+    }
+}
+
 // Boots the real API against a throwaway App_Data dir with a known password and scan key,
 // and a fake Ticketmaster.
 public class KulturFactory : WebApplicationFactory<Program>
@@ -35,6 +51,7 @@ public class KulturFactory : WebApplicationFactory<Program>
     readonly string _dataDir = Path.Combine(Path.GetTempPath(), "kultur-tests", Guid.NewGuid().ToString("n"));
 
     public FakeTicketmaster Ticketmaster { get; } = new();
+    public FakeSite OriginalTalks { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -46,7 +63,12 @@ public class KulturFactory : WebApplicationFactory<Program>
         builder.UseSetting("Ticketmaster:ApiKey", "tm-key");
         builder.UseSetting("Ticketmaster:Months", "1");
         builder.UseSetting("Ticketmaster:DelayMs", "0");
-        builder.ConfigureTestServices(s => s.AddHttpClient<TicketmasterSource>().ConfigurePrimaryHttpMessageHandler(() => Ticketmaster));
+        builder.UseSetting("OriginalTalks:DelayMs", "0");
+        builder.ConfigureTestServices(s =>
+        {
+            s.AddHttpClient<TicketmasterSource>().ConfigurePrimaryHttpMessageHandler(() => Ticketmaster);
+            s.AddHttpClient<OriginalTalksSource>().ConfigurePrimaryHttpMessageHandler(() => OriginalTalks);
+        });
     }
 
     public async Task<HttpClient> LoggedInClientAsync()

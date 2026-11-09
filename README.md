@@ -30,7 +30,7 @@ POC: én bruger med ét kodeord, ingen database (JSON-filer i `App_Data`, person
 |---|---|
 | Backend | ASP.NET Core minimal API, .NET 10 (`src/Kultur.Api`) |
 | Frontend | React 19 + Vite + Tailwind 4, installerbar PWA (`web/`) |
-| Kilder | `IEventSource` i `src/Kultur.Api/Scan/` – i dag `TicketmasterSource` |
+| Kilder | `IEventSource` i `src/Kultur.Api/Scan/` – `TicketmasterSource` og `OriginalTalksSource` |
 | Data | `EventCatalog` (`App_Data/events.json`), `UserData` (reaktioner, sidste besøg), `InterestStore` (vurderinger), profil |
 | Smag | `TasteModel` (`src/Kultur.Api/Taste/`): emner pr. arrangement, point og "hvorfor" |
 | Hosting | Simply (IIS, self-contained win-x86) – se [`docs/simply-deploy.md`](docs/simply-deploy.md) |
