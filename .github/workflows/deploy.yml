@@ -84,11 +84,22 @@ jobs:
       # Værn: sync sletter alt på sitet, der ikke er i build'et. Står SIMPLY_WEBDEPLOY_SITE til
       # et andet site (fx read.kaspert.dk, hvis secrets er kopieret derfra), ville det blive
       # overskrevet. Derfor deployer vi kun til kultur.kaspert.dk.
-      - name: Check deploy target
+      - name: Check deploy secrets and target
         shell: pwsh
         env:
           WEBDEPLOY_SITE: ${{ secrets.SIMPLY_WEBDEPLOY_SITE }}
+          WEBDEPLOY_URL: ${{ secrets.SIMPLY_WEBDEPLOY_URL }}
+          WEBDEPLOY_USERNAME: ${{ secrets.SIMPLY_WEBDEPLOY_USERNAME }}
+          WEBDEPLOY_PASSWORD: ${{ secrets.SIMPLY_WEBDEPLOY_PASSWORD }}
         run: |
+          # A missing secret otherwise only shows up as a vague 401 from msdeploy.
+          $missing = @('URL', 'SITE', 'USERNAME', 'PASSWORD') |
+            Where-Object { -not [Environment]::GetEnvironmentVariable("WEBDEPLOY_$_") } |
+            ForEach-Object { "SIMPLY_WEBDEPLOY_$_" }
+          if ($missing) {
+            Write-Error "Missing secrets in environment Production: $($missing -join ', ')"
+            exit 1
+          }
           if ($env:WEBDEPLOY_SITE -ne 'kultur.kaspert.dk') {
             Write-Error "SIMPLY_WEBDEPLOY_SITE must be kultur.kaspert.dk; refusing to overwrite another site."
             exit 1
@@ -104,7 +115,7 @@ jobs:
           WEBDEPLOY_URL: ${{ secrets.SIMPLY_WEBDEPLOY_URL }}
           WEBDEPLOY_SITE: ${{ secrets.SIMPLY_WEBDEPLOY_SITE }}
           WEBDEPLOY_USERNAME: ${{ secrets.SIMPLY_WEBDEPLOY_USERNAME }}
-          WEBDEPLOY_PASSWORD: ${{ secrets.SIMPLY_WEBDEPLOY_PASSEORD }}
+          WEBDEPLOY_PASSWORD: ${{ secrets.SIMPLY_WEBDEPLOY_PASSWORD }}
         run: |
           $msdeploy = "${env:ProgramFiles}\IIS\Microsoft Web Deploy V3\msdeploy.exe"
           if (-not (Test-Path $msdeploy)) {
