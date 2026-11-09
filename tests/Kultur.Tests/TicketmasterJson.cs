@@ -3,10 +3,13 @@ namespace Kultur.Tests;
 // Discovery API responses, trimmed to the fields the app reads.
 public static class TicketmasterJson
 {
-    public static string Page(params string[] events) => $$"""
+    public static string Page(params string[] events) => PageOf(events.Length, events);
+
+    /// <summary>A page that says the search has <paramref name="total"/> events in all.</summary>
+    public static string PageOf(int total, params string[] events) => $$"""
         {
           "_embedded": { "events": [ {{string.Join(",", events)}} ] },
-          "page": { "size": 200, "totalElements": {{events.Length}}, "totalPages": 1, "number": 0 }
+          "page": { "size": 200, "totalElements": {{total}}, "totalPages": {{Math.Max(1, (total + 199) / 200)}}, "number": 0 }
         }
         """;
 

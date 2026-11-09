@@ -9,17 +9,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kultur.Tests;
 
-// Stand-in for Ticketmaster: answers every request with Body, and records the URLs asked for.
+// Stand-in for Ticketmaster: answers with Body (or Respond, when set, per request) and records the URLs asked for.
 public class FakeTicketmaster : HttpMessageHandler
 {
     public string Body { get; set; } = TicketmasterJson.Page();
     public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
+    public Func<Uri, string>? Respond { get; set; }
     public List<string> Requested { get; } = [];
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken ct)
     {
         lock (Requested) Requested.Add(req.RequestUri!.ToString());
-        return Task.FromResult(new HttpResponseMessage(Status) { Content = new StringContent(Body, Encoding.UTF8, "application/json") });
+        var body = Respond?.Invoke(req.RequestUri!) ?? Body;
+        return Task.FromResult(new HttpResponseMessage(Status) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
     }
 }
 
@@ -42,7 +44,8 @@ public class KulturFactory : WebApplicationFactory<Program>
         builder.UseSetting("Auth:LoginAttemptsPerMinute", "1000");
         builder.UseSetting("Scan:Key", ScanKey);
         builder.UseSetting("Ticketmaster:ApiKey", "tm-key");
-        builder.UseSetting("Ticketmaster:Pages", "1");
+        builder.UseSetting("Ticketmaster:Months", "1");
+        builder.UseSetting("Ticketmaster:DelayMs", "0");
         builder.ConfigureTestServices(s => s.AddHttpClient<TicketmasterSource>().ConfigurePrimaryHttpMessageHandler(() => Ticketmaster));
     }
 
