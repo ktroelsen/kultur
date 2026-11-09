@@ -11,7 +11,7 @@ public record EventItem(CultureEvent Event, Zone Zone, Reaction? Reaction, bool 
 
 public record EventList(DateTimeOffset? LastVisitUtc, List<EventItem> Events);
 
-/// <summary>Reason only goes with NotInterested: Date and Place hide this date, Event every date of it.</summary>
+/// <summary>Reason only goes with NotInterested: Date hides the whole day, Place this date, Event every date of it.</summary>
 public record ReactionRequest(Reaction? Reaction, DismissReason? Reason = null);
 
 public static class EventEndpoints
@@ -54,9 +54,12 @@ public static class EventEndpoints
             var judged = (await catalog.AllAsync(ct)).Select(e =>
             {
                 var fit = TasteModel.FitOf(e, ratings, learned);
-                // Dates of a series turned down count as "Nej tak" too, also ones found later.
+                // Dates of a series turned down, and everything on a busy day, count as "Nej tak" too –
+                // also events found later. A reaction of the event's own always wins.
                 Reaction? reaction = reactions.TryGetValue(e.Id, out var r) ? r
-                    : learning.DismissedSeries.ContainsKey(Series.KeyOf(e)) ? Reaction.NotInterested : null;
+                    : learning.DismissedSeries.ContainsKey(Series.KeyOf(e)) ? Reaction.NotInterested
+                    : e.Date is { } d && learning.BusyDays.ContainsKey(d.ToString("yyyy-MM-dd")) ? Reaction.NotInterested
+                    : null;
                 var item = new EventItem(
                     e,
                     Zones.Of(e.City, e.CountryCode),

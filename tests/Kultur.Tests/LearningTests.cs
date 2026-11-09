@@ -62,16 +62,32 @@ public class LearningTests
     }
 
     [Fact]
-    public async Task No_thanks_to_the_date_hides_only_that_date_and_teaches_nothing()
+    public async Task No_thanks_to_the_date_hides_everything_that_day_and_teaches_nothing()
     {
-        var (factory, client) = await WithEventsAsync();
-        using var _ = factory;
+        using var factory = new KulturFactory();
+        factory.Ticketmaster.Body = TicketmasterJson.Page(
+            TicketmasterJson.Event("d1", "Agnes Obel", date: "2099-05-01", venue: "Vega", performers: ["Agnes Obel"]),
+            TicketmasterJson.Event("d2", "Jazz i kælderen", date: "2099-05-01", venue: "Jazzhouse"),
+            TicketmasterJson.Event("d3", "Teater", date: "2099-05-01", venue: "Betty Nansen", segment: "Arts & Theatre", genre: "Theatre"),
+            TicketmasterJson.Event("d4", "Agnes Obel – ekstra", date: "2099-05-02", venue: "Vega", performers: ["Agnes Obel"]));
+        await factory.ScanAsync();
+        var client = await factory.LoggedInClientAsync();
 
-        await React(client, "b1", "NotInterested", "Date"); // Agnes Obel at Vega, busy that day
+        await React(client, "d3", "Saved"); // already decided to go to this one
+        await React(client, "d1", "NotInterested", "Date"); // busy 1 May
         var forYou = await ForYou(client);
-        Assert.DoesNotContain(forYou, i => i.Event.Id == "ticketmaster:b1");
-        Assert.Equal(0, forYou.Single(i => i.Event.Id == "ticketmaster:b2").Score); // her other date: untouched
-        Assert.Equal(0, forYou.Single(i => i.Event.Id == "ticketmaster:c1").Score); // Vega: untouched
+        Assert.DoesNotContain(forYou, i => i.Event.Id is "ticketmaster:d1" or "ticketmaster:d2");
+        Assert.Contains(forYou, i => i.Event.Id == "ticketmaster:d3"); // saved: stays
+        Assert.Equal(0, forYou.Single(i => i.Event.Id == "ticketmaster:d4").Score); // nothing learned
+
+        // An event found later on that day is hidden too…
+        factory.Ticketmaster.Body = TicketmasterJson.Page(TicketmasterJson.Event("d5", "Ny koncert", date: "2099-05-01"));
+        await factory.ScanAsync();
+        Assert.DoesNotContain(await ForYou(client), i => i.Event.Id == "ticketmaster:d5");
+
+        // …and taking back any of them frees the day.
+        await React(client, "d2", null);
+        Assert.Equal(3, (await ForYou(client)).Count(i => i.Event.Date == new DateOnly(2099, 5, 1) && i.Event.Id != "ticketmaster:d3"));
     }
 
     [Fact]

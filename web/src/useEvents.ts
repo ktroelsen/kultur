@@ -24,15 +24,15 @@ export function useEvents(view: EventView) {
     load();
   }, [load]);
 
-  // "Nej tak – arrangementet" (or taking back a date of a hidden show) changes other dates too, so
-  // the list is fetched again; otherwise just this card changes.
+  // "Nej tak – begivenheden/datoen" (or taking one of those back) changes other cards too, so the
+  // list is fetched again; otherwise just this card changes.
   const react = useCallback(async (id: string, reaction: Reaction | null, reason: DismissReason | null = null) => {
     const before = items;
     const target = items?.find((i) => i.event.id === id);
     setItems((list) => list?.map((i) => (i.event.id === id ? { ...i, reaction } : i)) ?? null);
     try {
       await setReaction(id, reaction, reason);
-      if (reason === 'Event' || target?.reaction === 'NotInterested') {
+      if (reason === 'Event' || reason === 'Date' || target?.reaction === 'NotInterested') {
         const list = await fetchEvents(view);
         setItems(list.events);
       }

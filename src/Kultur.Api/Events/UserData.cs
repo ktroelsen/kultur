@@ -20,8 +20,9 @@ public class UserData(string usersDir, TimeProvider clock)
 
     /// <summary>
     /// Sets Gem / Måske / Nej tak (null takes it back) and what the button teaches. "Nej tak" because of
-    /// the event hides its whole series – every date, also ones found later. Taking any date of a hidden
-    /// series back (or giving it another reaction) brings the series back.
+    /// the event hides its whole series – every date, also ones found later; because of the date, every
+    /// event that day. Taking any date of a hidden series back (or giving it another reaction) brings the
+    /// series back; taking back any event on a busy day frees the day.
     /// </summary>
     public async Task SetReactionAsync(string userId, CultureEvent e, Reaction? reaction, DismissReason? reason, CancellationToken ct = default)
     {
@@ -32,6 +33,15 @@ public class UserData(string usersDir, TimeProvider clock)
             var learning = await LoadLearningAsync(userId, ct);
             var series = Series.KeyOf(e);
             var dismissesSeries = reaction == Reaction.NotInterested && reason == DismissReason.Event;
+            var day = e.Date?.ToString("yyyy-MM-dd");
+            var marksBusy = reaction == Reaction.NotInterested && reason == DismissReason.Date && day is not null;
+
+            // Gem or Måske on a busy day keeps that one event; only taking a "Nej tak" back frees the day.
+            if (day is not null && learning.BusyDays.TryGetValue(day, out var busyTrigger) && reaction is null)
+            {
+                learning.BusyDays.Remove(day);
+                if (busyTrigger != e.Id) Forget(busyTrigger);
+            }
 
             if (learning.DismissedSeries.TryGetValue(series, out var trigger) && !(dismissesSeries && trigger == e.Id))
             {
@@ -47,6 +57,7 @@ public class UserData(string usersDir, TimeProvider clock)
                 var deltas = Lessons.From(e, r, reason);
                 if (deltas.Count > 0) learning.Applied[e.Id] = deltas;
                 if (dismissesSeries) learning.DismissedSeries[series] = e.Id;
+                if (marksBusy) learning.BusyDays[day!] = e.Id;
             }
 
             await JsonFile.WriteAsync(FileOf(userId, "reactions.json"), reactions, ct);
@@ -94,6 +105,9 @@ public class Learning
 
     /// <summary>Series hidden by "Nej tak – arrangementet", and the date it was pressed on.</summary>
     public Dictionary<string, string> DismissedSeries { get; set; } = [];
+
+    /// <summary>Days marked busy ("Nej tak – datoen", yyyy-MM-dd), and the event it was pressed on.</summary>
+    public Dictionary<string, string> BusyDays { get; set; } = [];
 
     /// <summary>Per event id: topic key → points it added (positive) or took away.</summary>
     public Dictionary<string, Dictionary<string, double>> Applied { get; set; } = [];

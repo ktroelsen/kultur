@@ -10,7 +10,7 @@ const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = 
 ];
 
 const reasons: { reason: DismissReason; label: string }[] = [
-  { reason: 'Date', label: 'Datoen – jeg kan ikke den dag' },
+  { reason: 'Date', label: 'Datoen – jeg er optaget hele dagen' },
   { reason: 'Place', label: 'Stedet – kun denne dato' },
   { reason: 'Event', label: 'Begivenheden – uanset dato' },
 ];
