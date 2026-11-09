@@ -35,12 +35,12 @@ export function upcomingSale(e: CultureEvent, now = new Date()) {
 const genres: Record<string, string> = {
   Football: 'Fodbold', Soccer: 'Fodbold', Handball: 'Håndbold', 'Ice Hockey': 'Ishockey', Hockey: 'Ishockey',
   Motorsports: 'Motorsport', 'Motorsports/Racing': 'Motorsport', Cycling: 'Cykling', Equestrian: 'Ridesport',
-  Athletics: 'Atletik', Boxing: 'Boksning', 'Martial Arts': 'Kampsport', Wrestling: 'Wrestling', Golf: 'Golf',
+  Athletics: 'Atletik', Running: 'Løb', Marathon: 'Maraton', Boxing: 'Boksning', 'Martial Arts': 'Kampsport', Wrestling: 'Wrestling', Golf: 'Golf',
   Theatre: 'Teater', "Children's Theatre": 'Børneteater', Comedy: 'Stand-up', Dance: 'Dans', Classical: 'Klassisk',
   'Fine Art': 'Kunst', 'Performance Art': 'Performance', Family: 'Familie', Circus: 'Cirkus', Magic: 'Magi',
   'Magic & Illusion': 'Magi', Spectacular: 'Show', Electronic: 'Elektronisk',
   Alternative: 'Alternativ', World: 'Verdensmusik', Folk: 'Folkemusik', Religious: 'Religiøs musik',
-  Miscellaneous: 'Diverse', Lectures: 'Foredrag', 'Lecture/Seminar': 'Foredrag',
+  Miscellaneous: 'Diverse', Lectures: 'Foredrag', 'Lecture/Seminar': 'Foredrag', 'Spoken Word': 'Foredrag',
 };
 
 export const genreName = (genre: string) => genres[genre] ?? genre;

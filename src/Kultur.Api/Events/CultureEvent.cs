@@ -1,6 +1,6 @@
 namespace Kultur.Api.Events;
 
-public enum Category { Music, Theatre, Comedy, Film, Sport, Other }
+public enum Category { Music, Theatre, Comedy, Talk, Film, Sport, Running, Other }
 
 /// <summary>How far away: the further, the stronger a match must be (see docs/koncept.md).</summary>
 public enum Zone { Copenhagen = 1, Denmark = 2, Abroad = 3 }

@@ -114,6 +114,19 @@ public class ScanTests
                 DateTimeOffset.Parse(query["endDateTime"]!, System.Globalization.CultureInfo.InvariantCulture));
     }
 
+    [Theory]
+    [InlineData("Music", "Rock", Category.Music)]
+    [InlineData("Arts & Theatre", "Comedy", Category.Comedy)]
+    [InlineData("Arts & Theatre", "Theatre", Category.Theatre)]
+    [InlineData("Miscellaneous", "Lecture/Seminar", Category.Talk)]
+    [InlineData("Arts & Theatre", "Spoken Word", Category.Talk)]
+    [InlineData("Sports", "Running", Category.Running)]
+    [InlineData("Sports", "Marathon", Category.Running)]
+    [InlineData("Sports", "Football", Category.Sport)]
+    [InlineData("Miscellaneous", null, Category.Other)]
+    public void Ticketmaster_segment_and_genre_give_the_category(string segment, string? genre, Category expected) =>
+        Assert.Equal(expected, TicketmasterSource.CategoryOf(segment, genre));
+
     [Fact]
     public async Task Rescan_keeps_first_seen_and_drops_past_events()
     {
