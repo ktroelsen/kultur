@@ -1,0 +1,31 @@
+name: Nightly scan
+
+# IIS genbruger app-poolen, så Kultur har ingen baggrundstjeneste. I stedet kalder denne cron
+# POST /api/scan hver nat, som henter nye arrangementer fra kilderne. Kræver secret
+# KULTUR_SCAN_KEY (environment "Production") – samme værdi som deploy lægger i Scan:Key.
+on:
+  schedule:
+    - cron: '17 2 * * *'     # 02:17 UTC (03:17/04:17 dansk tid)
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Scan
+        env:
+          SCAN_KEY: ${{ secrets.KULTUR_SCAN_KEY }}
+        run: |
+          if [ -z "$SCAN_KEY" ]; then
+            echo "::error::KULTUR_SCAN_KEY secret not set"
+            exit 1
+          fi
+          # Simplys firewall afviser curls egen User-Agent (455).
+          curl -fsS -A "Mozilla/5.0" --max-time 900 -X POST \
+            -H "X-Scan-Key: $SCAN_KEY" \
+            https://kultur.kaspert.dk/api/scan

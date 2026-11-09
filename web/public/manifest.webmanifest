@@ -1,0 +1,16 @@
+{
+  "name": "Kultur",
+  "short_name": "Kultur",
+  "description": "Koncerter, teater, stand-up og sport – fundet og udvalgt til dig",
+  "lang": "da",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#120f17",
+  "theme_color": "#120f17",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
