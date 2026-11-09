@@ -14,7 +14,7 @@ public class LearningTests
             TicketmasterJson.Event("a2", "Oplev Rane Willerslev", city: "København K", venue: "Bremen Teater", segment: "Miscellaneous", genre: "Lecture/Seminar", performers: ["Rane Willerslev"]),
             TicketmasterJson.Event("b1", "Agnes Obel", venue: "Vega", performers: ["Agnes Obel"]),
             TicketmasterJson.Event("b2", "Agnes Obel – ekstra", venue: "DR Koncerthuset", performers: ["Agnes Obel"]),
-            TicketmasterJson.Event("c1", "Andet band", venue: "Vega", performers: ["Andet band"]));
+            TicketmasterJson.Event("c1", "Andet band", venue: "Vega", genre: "Jazz", performers: ["Andet band"]));
         await factory.ScanAsync();
         return (factory, await factory.LoggedInClientAsync());
     }
@@ -47,18 +47,15 @@ public class LearningTests
     }
 
     [Fact]
-    public async Task No_thanks_to_the_place_hides_only_that_date_and_counts_against_the_venue()
+    public async Task The_place_is_not_a_reason_and_teaches_nothing()
     {
         var (factory, client) = await WithEventsAsync();
         using var _ = factory;
 
-        await React(client, "a1", "NotInterested", "Place");
-        var forYou = await ForYou(client);
-        Assert.DoesNotContain(forYou, i => i.Event.Id == "ticketmaster:a1");
-        Assert.Contains(forYou, i => i.Event.Id == "ticketmaster:a2");
+        Assert.Equal(HttpStatusCode.BadRequest, (await React(client, "a1", "NotInterested", "Place")).StatusCode);
 
-        await React(client, "b1", "NotInterested", "Place"); // Vega
-        Assert.True((await ForYou(client)).Single(i => i.Event.Id == "ticketmaster:c1").Score < 0); // also at Vega
+        await React(client, "b1", "Saved"); // Agnes Obel at Vega
+        Assert.Equal(0, (await ForYou(client)).Single(i => i.Event.Id == "ticketmaster:c1").Score); // another band at Vega
     }
 
     [Fact]

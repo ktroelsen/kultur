@@ -8,8 +8,9 @@ public enum Zone { Copenhagen = 1, Denmark = 2, Abroad = 3 }
 public enum Reaction { Saved, Maybe, NotInterested }
 
 /// <summary>
-/// Why "Nej tak": the date (busy that day – every event that day goes, nothing learned), the place (only
-/// this date goes; the venue counts down), or the event itself (every date goes, whatever the date).
+/// Why "Nej tak": the date (busy that day – every event that day goes, nothing learned) or the event
+/// itself (every date goes, whatever the date). Place is no longer offered; it stays only so older
+/// learning.json files still read.
 /// </summary>
 public enum DismissReason { Place, Event, Date }
 

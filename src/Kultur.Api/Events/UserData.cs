@@ -133,17 +133,15 @@ public static class Lessons
 
         switch (reaction, reason)
         {
+            // The place isn't part of it: the buttons teach about performers and genres only.
             case (Reaction.Saved, _):
-                Add(Taste.TopicKind.Performer, 1); Add(Taste.TopicKind.Genre, 0.5); Add(Taste.TopicKind.Venue, 0.25);
+                Add(Taste.TopicKind.Performer, 1); Add(Taste.TopicKind.Genre, 0.5);
                 break;
             case (Reaction.Maybe, _):
                 Add(Taste.TopicKind.Performer, 0.5); Add(Taste.TopicKind.Genre, 0.25);
                 break;
             case (Reaction.NotInterested, DismissReason.Event):
                 Add(Taste.TopicKind.Performer, -1); Add(Taste.TopicKind.Genre, -0.5);
-                break;
-            case (Reaction.NotInterested, DismissReason.Place):
-                Add(Taste.TopicKind.Venue, -1);
                 break;
             // DismissReason.Date: busy that day – says nothing about taste.
         }

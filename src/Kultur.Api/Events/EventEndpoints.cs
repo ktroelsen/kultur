@@ -11,7 +11,7 @@ public record EventItem(CultureEvent Event, Zone Zone, Reaction? Reaction, bool 
 
 public record EventList(DateTimeOffset? LastVisitUtc, List<EventItem> Events);
 
-/// <summary>Reason only goes with NotInterested: Date hides the whole day, Place this date, Event every date of it.</summary>
+/// <summary>Reason only goes with NotInterested: Date hides the whole day, Event every date of the event.</summary>
 public record ReactionRequest(Reaction? Reaction, DismissReason? Reason = null);
 
 public static class EventEndpoints
@@ -98,6 +98,8 @@ public static class EventEndpoints
             if (await catalog.GetAsync(id, ct) is not { } e) return Results.NotFound();
             if (body.Reason is not null && body.Reaction != Reaction.NotInterested)
                 return Results.Problem("En begrundelse hører kun til \"Nej tak\".", statusCode: 400);
+            if (body.Reason == DismissReason.Place)
+                return Results.Problem("\"Stedet\" er ikke længere en begrundelse.", statusCode: 400);
             await data.SetReactionAsync(Users.Id(user), e, body.Reaction, body.Reason, ct);
             return Results.NoContent();
         });

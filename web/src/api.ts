@@ -39,8 +39,8 @@ export type Me = { name: string };
 export type Category = 'Music' | 'Theatre' | 'Comedy' | 'Talk' | 'Film' | 'Sport' | 'Running' | 'Other';
 export type Zone = 'Copenhagen' | 'Denmark' | 'Abroad';
 export type Reaction = 'Saved' | 'Maybe' | 'NotInterested';
-/** Why "Nej tak": busy that day (everything that day), the place (only this date), or the event itself (every date). */
-export type DismissReason = 'Date' | 'Place' | 'Event';
+/** Why "Nej tak": busy that day (everything that day goes), or the event itself (every date goes). */
+export type DismissReason = 'Date' | 'Event';
 export type EventView = 'new' | 'forYou' | 'saved';
 
 export type CultureEvent = {
