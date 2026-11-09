@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Hosting;
+using System.Net.Http.Json;
 using System.Net;
 using Kultur.Api.Events;
 using Kultur.Api.Scan;
@@ -88,5 +90,34 @@ public class ScanTests
         var tm = Assert.Single(result!.Sources);
         Assert.NotNull(tm.Error);
         Assert.DoesNotContain("tm-key", tm.Error); // the key is in the URL; it must not leak
+    }
+
+    [Fact]
+    public async Task Ticketmasters_own_reason_is_shown()
+    {
+        using var factory = new KulturFactory();
+        factory.Ticketmaster.Status = HttpStatusCode.Unauthorized;
+        factory.Ticketmaster.Body = """{"fault":{"faultstring":"Invalid ApiKey","detail":{"errorcode":"oauth.v2.InvalidApiKey"}}}""";
+        var client = await factory.LoggedInClientAsync();
+        var result = await (await client.PostAsync("/api/scan", null)).Content.ReadAsync<ScanResult>();
+        Assert.Equal("Ticketmaster svarede 401: Invalid ApiKey", Assert.Single(result!.Sources).Error);
+    }
+
+    [Theory]
+    [InlineData("""{"errors":[{"code":"DIS1004","detail":"Resource not found"}]}""", "Resource not found")]
+    [InlineData("<html>Bad gateway</html>", null)]
+    [InlineData("", null)]
+    public void Error_reason_is_read_from_either_format(string body, string? expected) =>
+        Assert.Equal(expected, TicketmasterSource.Reason(body));
+
+    [Fact]
+    public async Task Key_is_trimmed()
+    {
+        using var factory = new KulturFactory();
+        using var app = factory.WithWebHostBuilder(b => b.UseSetting("Ticketmaster:ApiKey", "  tm-key\n"));
+        var client = app.CreateClient();
+        (await client.PostAsJsonAsync("/api/auth/login", new { password = KulturFactory.Password })).EnsureSuccessStatusCode();
+        (await client.PostAsync("/api/scan", null)).EnsureSuccessStatusCode();
+        Assert.Contains("apikey=tm-key&", Assert.Single(factory.Ticketmaster.Requested));
     }
 }
