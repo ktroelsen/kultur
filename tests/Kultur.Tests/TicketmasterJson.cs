@@ -14,7 +14,8 @@ public static class TicketmasterJson
         """;
 
     public static string Event(string id, string name, string date = "2099-03-14", string city = "København K",
-        string country = "DK", string segment = "Music", string genre = "Rock", string venue = "Vega") => $$"""
+        string country = "DK", string segment = "Music", string genre = "Rock", string venue = "Vega",
+        string[]? performers = null) => $$"""
         {
           "id": "{{id}}",
           "name": "{{name}}",
@@ -28,7 +29,12 @@ public static class TicketmasterJson
           "dates": { "start": { "localDate": "{{date}}", "dateTime": "{{date}}T19:00:00Z" } },
           "classifications": [ { "segment": { "name": "{{segment}}" }, "genre": { "name": "{{genre}}" } } ],
           "priceRanges": [ { "type": "standard", "currency": "DKK", "min": 345.0, "max": 495.0 } ],
-          "_embedded": { "venues": [ { "name": "{{venue}}", "city": { "name": "{{city}}" }, "country": { "countryCode": "{{country}}" } } ] }
+          "_embedded": {
+            "venues": [ { "name": "{{venue}}", "city": { "name": "{{city}}" }, "country": { "countryCode": "{{country}}" } } ],
+            "attractions": [ {{Attractions(performers ?? [name])}} ]
+          }
         }
         """;
+
+    static string Attractions(string[] names) => string.Join(",", names.Select(n => "{ \"name\": \"" + n + "\" }"));
 }

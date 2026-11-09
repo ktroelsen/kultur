@@ -148,7 +148,8 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
                 Url: url,
                 SaleStart: DateTimeOffset.TryParse(Str(e, "sales", "public", "startDateTime"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var ss) ? ss : null,
                 ImageUrl: BestImage(e),
-                FirstSeenUtc: now));
+                FirstSeenUtc: now,
+                Performers: Performers(e)));
         }
         return (list, totalPages, totalElements);
     }
@@ -184,6 +185,21 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
         "Arts & Theatre" => Category.Theatre,
         _ => Category.Other,
     };
+
+    // Artists, bands or teams ("attractions"), in Ticketmaster's order.
+    static List<string>? Performers(JsonElement e)
+    {
+        if (!e.TryGetProperty("_embedded", out var embedded) || !embedded.TryGetProperty("attractions", out var attractions) ||
+            attractions.ValueKind != JsonValueKind.Array)
+            return null;
+        var names = attractions.EnumerateArray()
+            .Select(a => Str(a, "name")?.Trim())
+            .OfType<string>()
+            .Where(n => n.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return names.Count > 0 ? names : null;
+    }
 
     // A 16:9 picture around card size.
     static string? BestImage(JsonElement e)

@@ -10,6 +10,7 @@ public enum Reaction { Saved, Maybe, NotInterested }
 /// <summary>
 /// One event you can buy a ticket for, normalised from any source.
 /// Id is "{source}:{the source's own id}", so the same event from one source is merged on rescans.
+/// Performers: artists, bands or teams taking part (null in data saved before they were fetched).
 /// </summary>
 public record CultureEvent(
     string Id,
@@ -27,4 +28,5 @@ public record CultureEvent(
     string Url,
     DateTimeOffset? SaleStart,
     string? ImageUrl,
-    DateTimeOffset FirstSeenUtc);
+    DateTimeOffset FirstSeenUtc,
+    IReadOnlyList<string>? Performers = null);

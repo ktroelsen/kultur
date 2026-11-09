@@ -59,10 +59,49 @@ export type CultureEvent = {
   saleStart: string | null;
   imageUrl: string | null;
   firstSeenUtc: string;
+  /** Artists, bands or teams taking part. */
+  performers: string[] | null;
 };
 
-export type EventItem = { event: CultureEvent; zone: Zone; reaction: Reaction | null; isNew: boolean };
+export type Interest = 'Never' | 'Little' | 'Maybe' | 'Gladly' | 'Very';
+export type TopicKind = 'Category' | 'Genre' | 'Performer' | 'Venue';
+export type Topic = { kind: TopicKind; name: string; key: string };
+
+export type EventItem = {
+  event: CultureEvent;
+  zone: Zone;
+  reaction: Reaction | null;
+  isNew: boolean;
+  /** How well it fits the ratings under "Smag" (0 = neutral). */
+  score: number;
+  because: Topic | null;
+  becauseRating: Interest | null;
+};
 export type EventList = { lastVisitUtc: string | null; events: EventItem[] };
+
+export type TopicExample = { title: string; date: string | null; venue: string | null };
+export type NextTopic = { topic: Topic; upcoming: number; examples: TopicExample[]; rated: number; left: number };
+export type RatedTopic = { key: string; kind: TopicKind; name: string; rating: Interest; atUtc: string };
+
+export const interestScale: { value: Interest; label: string }[] = [
+  { value: 'Never', label: 'Aldrig' },
+  { value: 'Little', label: 'Lidt' },
+  { value: 'Maybe', label: 'Måske' },
+  { value: 'Gladly', label: 'Gerne' },
+  { value: 'Very', label: 'Meget' },
+];
+
+export const interestNames = Object.fromEntries(interestScale.map((i) => [i.value, i.label])) as Record<Interest, string>;
+
+export const topicKindNames: Record<TopicKind, string> = {
+  Category: 'Kategori',
+  Genre: 'Genre',
+  Performer: 'Kunstner eller hold',
+  Venue: 'Sted',
+};
+
+export const rateTopic = (kind: TopicKind, name: string, rating: Interest | null) =>
+  api<void>('/api/taste', { method: 'PUT', json: { kind, name, rating } });
 
 export type TasteProfile = { about: string; sport: string };
 
