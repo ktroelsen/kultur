@@ -131,6 +131,7 @@ public static class Lessons
             case (Reaction.NotInterested, DismissReason.Place):
                 Add(Taste.TopicKind.Venue, -1);
                 break;
+            // DismissReason.Date: busy that day – says nothing about taste.
         }
         return lessons;
     }

@@ -9,6 +9,12 @@ const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = 
   { reaction: 'NotInterested', label: 'Nej tak', icon: X },
 ];
 
+const reasons: { reason: DismissReason; label: string }[] = [
+  { reason: 'Date', label: 'Datoen – jeg kan ikke den dag' },
+  { reason: 'Place', label: 'Stedet – kun denne dato' },
+  { reason: 'Event', label: 'Begivenheden – uanset dato' },
+];
+
 export default function EventCard({
   item,
   onReact,
@@ -53,18 +59,15 @@ export default function EventCard({
           <div className="mt-4">
             <p className="text-sm text-muted">Hvorfor nej tak?</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                onClick={() => { setAskWhy(false); onReact('NotInterested', 'Place'); }}
-                className="rounded-full border border-line px-3 py-1.5 text-sm hover:border-accent hover:text-accent"
-              >
-                Stedet – kun denne dato
-              </button>
-              <button
-                onClick={() => { setAskWhy(false); onReact('NotInterested', 'Event'); }}
-                className="rounded-full border border-line px-3 py-1.5 text-sm hover:border-accent hover:text-accent"
-              >
-                Arrangementet – alle datoer
-              </button>
+              {reasons.map(({ reason, label }) => (
+                <button
+                  key={reason}
+                  onClick={() => { setAskWhy(false); onReact('NotInterested', reason); }}
+                  className="rounded-full border border-line px-3 py-1.5 text-left text-sm hover:border-accent hover:text-accent"
+                >
+                  {label}
+                </button>
+              ))}
               <button onClick={() => setAskWhy(false)} className="px-2 py-1.5 text-sm text-muted hover:text-fg">
                 Fortryd
               </button>

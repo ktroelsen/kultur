@@ -62,6 +62,19 @@ public class LearningTests
     }
 
     [Fact]
+    public async Task No_thanks_to_the_date_hides_only_that_date_and_teaches_nothing()
+    {
+        var (factory, client) = await WithEventsAsync();
+        using var _ = factory;
+
+        await React(client, "b1", "NotInterested", "Date"); // Agnes Obel at Vega, busy that day
+        var forYou = await ForYou(client);
+        Assert.DoesNotContain(forYou, i => i.Event.Id == "ticketmaster:b1");
+        Assert.Equal(0, forYou.Single(i => i.Event.Id == "ticketmaster:b2").Score); // her other date: untouched
+        Assert.Equal(0, forYou.Single(i => i.Event.Id == "ticketmaster:c1").Score); // Vega: untouched
+    }
+
+    [Fact]
     public async Task Saving_lifts_the_performers_other_dates_and_taking_it_back_undoes_it()
     {
         var (factory, client) = await WithEventsAsync();

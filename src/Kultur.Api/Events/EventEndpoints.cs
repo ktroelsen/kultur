@@ -11,7 +11,7 @@ public record EventItem(CultureEvent Event, Zone Zone, Reaction? Reaction, bool 
 
 public record EventList(DateTimeOffset? LastVisitUtc, List<EventItem> Events);
 
-/// <summary>Reason only goes with NotInterested: Place hides this date, Event every date of it.</summary>
+/// <summary>Reason only goes with NotInterested: Date and Place hide this date, Event every date of it.</summary>
 public record ReactionRequest(Reaction? Reaction, DismissReason? Reason = null);
 
 public static class EventEndpoints

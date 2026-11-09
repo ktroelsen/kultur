@@ -7,8 +7,11 @@ public enum Zone { Copenhagen = 1, Denmark = 2, Abroad = 3 }
 
 public enum Reaction { Saved, Maybe, NotInterested }
 
-/// <summary>Why "Nej tak": this place (only this date goes), or the event itself (every date goes).</summary>
-public enum DismissReason { Place, Event }
+/// <summary>
+/// Why "Nej tak": the date (busy that day – only this date goes, nothing learned), the place (only this
+/// date goes; the venue counts down), or the event itself (every date goes, whatever the date).
+/// </summary>
+public enum DismissReason { Place, Event, Date }
 
 /// <summary>
 /// One event you can buy a ticket for, normalised from any source.
