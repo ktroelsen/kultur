@@ -64,6 +64,7 @@ jobs:
           KULTUR_PASSWORD: ${{ secrets.KULTUR_PASSWORD }}
           KULTUR_SCAN_KEY: ${{ secrets.KULTUR_SCAN_KEY }}
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if (-not $env:KULTUR_PASSWORD) {
             Write-Warning "KULTUR_PASSWORD secret not set; login will be disabled in production (503)."
@@ -74,11 +75,15 @@ jobs:
           if (-not $env:TICKETMASTER_API_KEY) {
             Write-Warning "TICKETMASTER_API_KEY secret not set; Ticketmaster is skipped when scanning."
           }
+          if (-not $env:ANTHROPIC_API_KEY) {
+            Write-Warning "ANTHROPIC_API_KEY secret not set; the races look-up (Claude) is skipped."
+          }
           # -Depth: ConvertTo-Json stops at depth 2 by default.
           @{
             Auth = @{ Password = $env:KULTUR_PASSWORD }
             Scan = @{ Key = $env:KULTUR_SCAN_KEY }
             Ticketmaster = @{ ApiKey = $env:TICKETMASTER_API_KEY }
+            Ai = @{ ApiKey = $env:ANTHROPIC_API_KEY }
           } | ConvertTo-Json -Depth 5 | Set-Content publish/appsettings.Production.json -Encoding utf8
 
       # Værn: sync sletter alt på sitet, der ikke er i build'et. Står SIMPLY_WEBDEPLOY_SITE til

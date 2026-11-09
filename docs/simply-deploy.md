@@ -35,6 +35,7 @@ hver nat 02:17 UTC ─► Nightly scan ─► POST https://kultur.kaspert.dk/api
 | `SIMPLY_WEBDEPLOY_PASSWORD` | (fra Simply) | Web Deploy-adgangskode (korrekt stavet – i read hedder den `PASSEORD`) |
 | `KULTUR_PASSWORD` | valgfrit kodeord | Login i appen |
 | `KULTUR_SCAN_KEY` | lang tilfældig streng | Den natlige scanning (`X-Scan-Key`) |
+| `ANTHROPIC_API_KEY` | `sk-ant-…` | Claude: løb (ugentligt opslag med websøgning). Uden den springes løb over. |
 | `TICKETMASTER_API_KEY` | "Consumer Key" fra developer.ticketmaster.com | Ticketmaster-kilden. Uden den springes kilden over. |
 | `CLAUDE_CODE_0AUTH_TOKEN` | (som i read) | `@claude` i issues/PR'er |
 
@@ -44,7 +45,7 @@ Røgtest efter deploy (Simplys firewall afviser curls egen User-Agent med 455):
 curl -A "Mozilla/5.0" https://kultur.kaspert.dk/api/health
 ```
 
-`ticketmaster` og `scanKey` skal være `true`.
+`ticketmaster`, `scanKey` og `ai` skal være `true`.
 
 ## Lokalt
 

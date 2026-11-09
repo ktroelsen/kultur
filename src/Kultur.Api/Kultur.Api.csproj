@@ -10,6 +10,10 @@
     <UserSecretsId>kultur-api-3b8e1f52-9c4d-4a7e-b6f1-0d2c5e8a9f13</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Anthropic" Version="12.53.0" />
+  </ItemGroup>
+
   <!-- The dev password (Auth:Password = "dev") must never reach the server. -->
   <ItemGroup>
     <Content Update="appsettings.Development.json">

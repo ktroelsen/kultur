@@ -61,6 +61,8 @@ export type CultureEvent = {
   firstSeenUtc: string;
   /** Artists, bands or teams taking part. */
   performers: string[] | null;
+  /** A short fact worth showing, e.g. how to get a place in a race. */
+  note: string | null;
 };
 
 export type Interest = 'Never' | 'Little' | 'Maybe' | 'Gladly' | 'Very';

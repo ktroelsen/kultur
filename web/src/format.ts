@@ -24,11 +24,14 @@ export function price(e: CultureEvent) {
   return e.currency && e.currency !== 'DKK' ? `fra ${amount} ${e.currency}` : `fra ${amount} kr.`;
 }
 
-/** When ticket sales start, if that is still ahead. */
+const dateOnlyFormat = new Intl.DateTimeFormat('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+/** When ticket sales (or a race's registration) start, if that is still ahead. Races only know the day. */
 export function upcomingSale(e: CultureEvent, now = new Date()) {
   if (!e.saleStart) return null;
   const start = new Date(e.saleStart);
-  return start > now ? saleFormat.format(start) : null;
+  if (start <= now) return null;
+  return e.category === 'Running' ? dateOnlyFormat.format(start) : saleFormat.format(start);
 }
 
 // Ticketmaster's genre names are English; the common ones in Danish.
