@@ -47,6 +47,18 @@ public class LearningTests
     }
 
     [Fact]
+    public async Task No_thanks_without_a_reason_hides_only_this_one_and_teaches_nothing()
+    {
+        var (factory, client) = await WithEventsAsync();
+        using var _ = factory;
+
+        Assert.Equal(HttpStatusCode.NoContent, (await React(client, "b1", "NotInterested")).StatusCode);
+        var forYou = await ForYou(client);
+        Assert.DoesNotContain(forYou, i => i.Event.Id == "ticketmaster:b1");
+        Assert.Equal(0, forYou.Single(i => i.Event.Id == "ticketmaster:b2").Score); // Agnes Obel's other date
+    }
+
+    [Fact]
     public async Task The_place_is_not_a_reason_and_teaches_nothing()
     {
         var (factory, client) = await WithEventsAsync();
