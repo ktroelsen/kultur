@@ -42,7 +42,7 @@ public partial class OriginalTalksSource(HttpClient http, IOptions<OriginalTalks
             {
                 foreach (var e in Parse(await GetAsync(Site + path, ct), now)) byId[e.Id] = e;
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or JsonException)
             {
                 // One show that won't load mustn't cost us the rest.
                 failed++;
@@ -100,17 +100,20 @@ public partial class OriginalTalksSource(HttpClient http, IOptions<OriginalTalks
         }
         var text = payload.ToString();
 
+        // Every object is a candidate: Tikko writes keys alphabetically ({"addons_left":…,"id":…}), and the
+        // payload holds plenty of other objects, which ToEvent turns down.
         var events = new Dictionary<string, CultureEvent>();
-        for (var i = text.IndexOf("{\"id\":", StringComparison.Ordinal); i >= 0; i = text.IndexOf("{\"id\":", i + 1, StringComparison.Ordinal))
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, Copenhagen).DateTime);
+        for (var i = text.IndexOf('{'); i >= 0; i = text.IndexOf('{', i + 1))
         {
             var end = ObjectEnd(text, i);
             if (end < 0) continue;
             try
             {
                 using var doc = JsonDocument.Parse(text.AsMemory(i, end - i + 1));
-                if (ToEvent(doc.RootElement, now) is { } e) events[e.Id] = e;
+                if (ToEvent(doc.RootElement, now) is { } e && (e.Date is null || e.Date >= today)) events[e.Id] = e;
             }
-            catch (JsonException) { /* not a complete object after all */ }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException) { /* not an event after all */ }
         }
         return events.Values.ToList();
     }
@@ -137,8 +140,10 @@ public partial class OriginalTalksSource(HttpClient http, IOptions<OriginalTalks
 
     static CultureEvent? ToEvent(JsonElement o, DateTimeOffset now)
     {
-        if (!o.TryGetProperty("id", out var idEl) || !idEl.TryGetInt64(out var id)) return null;
-        if (!o.TryGetProperty("unix_time_from", out var fromEl) || !fromEl.TryGetInt64(out var from)) return null;
+        if (o.ValueKind != JsonValueKind.Object) return null;
+        // Other objects in the payload also have an "id", often a string ({"id":"event-list"}).
+        if (!o.TryGetProperty("id", out var idEl) || idEl.ValueKind != JsonValueKind.Number || !idEl.TryGetInt64(out var id)) return null;
+        if (!o.TryGetProperty("unix_time_from", out var fromEl) || fromEl.ValueKind != JsonValueKind.Number || !fromEl.TryGetInt64(out var from)) return null;
         if (!o.TryGetProperty("venue", out var venue) || venue.ValueKind != JsonValueKind.Object) return null;
         var title = Str(o, "title");
         if (title is null) return null;
@@ -157,8 +162,8 @@ public partial class OriginalTalksSource(HttpClient http, IOptions<OriginalTalks
         if (!string.IsNullOrEmpty(external) && Uri.TryCreate(external, UriKind.Absolute, out var ext) && ext.Scheme == Uri.UriSchemeHttps)
             url = ext.ToString();
 
-        var category = o.TryGetProperty("category", out var c) ? Str(c, "name") : null;
-        var price = o.TryGetProperty("lowest_price_cents", out var p) && p.TryGetInt64(out var cents) && cents > 0 ? cents / 100m : (decimal?)null;
+        var category = o.TryGetProperty("category", out var c) ? Str(c, "name")?.Trim() : null;
+        var price = o.TryGetProperty("lowest_price_cents", out var p) && p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var cents) && cents > 0 ? cents / 100m : (decimal?)null;
 
         return new CultureEvent(
             Id: $"originaltalks:{id}",
