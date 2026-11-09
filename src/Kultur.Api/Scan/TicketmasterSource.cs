@@ -26,6 +26,9 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
 
     readonly TicketmasterOptions _options = options.Value;
 
+    // A key pasted into a secret easily picks up a space or a line break.
+    string Key => _options.ApiKey!.Trim();
+
     public string Name => "ticketmaster";
     public bool Configured => _options.Configured;
 
@@ -38,14 +41,17 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
             for (var page = 0; page < pages; page++)
             {
                 // The Discovery API takes its key as a query parameter.
-                var url = $"{Endpoint}?apikey={Uri.EscapeDataString(_options.ApiKey!)}&countryCode={Uri.EscapeDataString(country)}" +
+                var url = $"{Endpoint}?apikey={Uri.EscapeDataString(Key)}&countryCode={Uri.EscapeDataString(country)}" +
                           $"&size={PageSize}&page={page}&sort=date,asc&locale=*";
                 using var res = await http.GetAsync(url, ct);
                 if (!res.IsSuccessStatusCode)
                 {
                     // Don't log the URL: it carries the key.
-                    log.LogWarning("Ticketmaster answered {Status} for {Country} page {Page}", (int)res.StatusCode, country, page);
-                    throw new HttpRequestException($"Ticketmaster svarede {(int)res.StatusCode}.");
+                    var reason = Reason(await res.Content.ReadAsStringAsync(ct))?.Replace(Key, "…");
+                    log.LogWarning("Ticketmaster answered {Status} ({Reason}) for {Country} page {Page}", (int)res.StatusCode, reason, country, page);
+                    throw new HttpRequestException(reason is null
+                        ? $"Ticketmaster svarede {(int)res.StatusCode}."
+                        : $"Ticketmaster svarede {(int)res.StatusCode}: {reason}");
                 }
                 var (events, totalPages) = Parse(await res.Content.ReadAsStringAsync(ct), now);
                 result.AddRange(events);
@@ -100,6 +106,28 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
                 FirstSeenUtc: now));
         }
         return (list, totalPages);
+    }
+
+    /// <summary>
+    /// Ticketmaster's own explanation of an error: {"fault":{"faultstring":"Invalid ApiKey"}} from the
+    /// gateway, or {"errors":[{"detail":"…"}]} from the API itself.
+    /// </summary>
+    public static string? Reason(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            var text = Str(root, "fault", "faultstring");
+            if (text is null && root.ValueKind == JsonValueKind.Object && root.TryGetProperty("errors", out var errors) &&
+                errors.ValueKind == JsonValueKind.Array && errors.GetArrayLength() > 0)
+                text = Str(errors[0], "detail");
+            return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     static Category CategoryOf(string? segment, string? genre) => segment switch

@@ -9,6 +9,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<TasteProfile | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [scan, setScan] = useState<ScanResult | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
@@ -30,10 +31,11 @@ export default function Profile() {
   async function scanNow() {
     setScanning(true);
     setScan(null);
+    setScanError(null);
     try {
       setScan(await api<ScanResult>('/api/scan', { method: 'POST' }));
     } catch (err) {
-      setStatus(errorMessage(err, 'Scanningen fejlede.'));
+      setScanError(errorMessage(err, 'Scanningen fejlede.'));
     } finally {
       setScanning(false);
     }
@@ -87,6 +89,7 @@ export default function Profile() {
         >
           {scanning ? 'Leder…' : 'Led efter nyt nu'}
         </button>
+        {scanError && <p className="mt-4 text-sm text-danger">{scanError}</p>}
         {scan && (
           <ul className="mt-4 space-y-1 text-sm">
             {scan.sources.map((s) => (
