@@ -12,8 +12,11 @@ public class TicketmasterOptions
     /// <summary>Countries to fetch (ISO codes). Denmark for now; zone 3 countries can be added.</summary>
     public string[] Countries { get; set; } = ["DK"];
 
-    /// <summary>Pages of 200 per country. The Discovery API never goes past 1000 results (5 pages).</summary>
-    public int Pages { get; set; } = 5;
+    /// <summary>How far ahead to look, in calendar months (the current one counts as the first).</summary>
+    public int Months { get; set; } = 12;
+
+    /// <summary>Pause between calls; the API allows 5 requests a second.</summary>
+    public int DelayMs { get; set; } = 250;
 
     public bool Configured => !string.IsNullOrWhiteSpace(ApiKey);
 }
@@ -23,6 +26,8 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
 {
     public const string Endpoint = "https://app.ticketmaster.com/discovery/v2/events.json";
     const int PageSize = 200;
+    const int MaxResults = 1000;
+    static readonly TimeSpan MinWindow = TimeSpan.FromDays(1);
 
     readonly TicketmasterOptions _options = options.Value;
 
@@ -32,44 +37,84 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
     public string Name => "ticketmaster";
     public bool Configured => _options.Configured;
 
+    // The Discovery API never returns more than 1000 results for one search (5 pages of 200), so
+    // we search month by month, and split a month in halves while it still has more than that.
     public async Task<List<CultureEvent>> FetchAsync(DateTimeOffset now, CancellationToken ct)
     {
-        var result = new List<CultureEvent>();
-        var pages = Math.Clamp(_options.Pages, 1, 1000 / PageSize);
+        var byId = new Dictionary<string, CultureEvent>();
+        var from = DateTimeOffset.FromUnixTimeSeconds(now.ToUnixTimeSeconds());
+        var firstOfMonth = new DateTimeOffset(from.Year, from.Month, 1, 0, 0, 0, TimeSpan.Zero);
         foreach (var country in _options.Countries)
         {
-            for (var page = 0; page < pages; page++)
+            var start = from;
+            for (var month = 1; month <= Math.Max(1, _options.Months); month++)
             {
-                // The Discovery API takes its key as a query parameter.
-                var url = $"{Endpoint}?apikey={Uri.EscapeDataString(Key)}&countryCode={Uri.EscapeDataString(country)}" +
-                          $"&size={PageSize}&page={page}&sort=date,asc&locale=*";
-                using var res = await http.GetAsync(url, ct);
-                if (!res.IsSuccessStatusCode)
-                {
-                    // Don't log the URL: it carries the key.
-                    var reason = Reason(await res.Content.ReadAsStringAsync(ct))?.Replace(Key, "…");
-                    log.LogWarning("Ticketmaster answered {Status} ({Reason}) for {Country} page {Page}", (int)res.StatusCode, reason, country, page);
-                    throw new HttpRequestException(reason is null
-                        ? $"Ticketmaster svarede {(int)res.StatusCode}."
-                        : $"Ticketmaster svarede {(int)res.StatusCode}: {reason}");
-                }
-                var (events, totalPages) = Parse(await res.Content.ReadAsStringAsync(ct), now);
-                result.AddRange(events);
-                if (page + 1 >= totalPages) break;
-                await Task.Delay(250, ct); // the API allows 5 requests a second
+                var end = firstOfMonth.AddMonths(month);
+                await FetchWindowAsync(country, start, end, now, byId, ct);
+                start = end;
             }
         }
+        return byId.Values.ToList();
+    }
+
+    async Task FetchWindowAsync(string country, DateTimeOffset start, DateTimeOffset end, DateTimeOffset now,
+        Dictionary<string, CultureEvent> byId, CancellationToken ct)
+    {
+        for (var page = 0; page < MaxResults / PageSize; page++)
+        {
+            var (events, totalPages, totalElements) = await GetPageAsync(country, start, end, page, now, ct);
+            if (page == 0 && totalElements > MaxResults)
+            {
+                if (end - start > MinWindow)
+                {
+                    var middle = DateTimeOffset.FromUnixTimeSeconds((start.ToUnixTimeSeconds() + end.ToUnixTimeSeconds()) / 2);
+                    await FetchWindowAsync(country, start, middle, now, byId, ct);
+                    await FetchWindowAsync(country, middle, end, now, byId, ct);
+                    return;
+                }
+                log.LogWarning("Ticketmaster has {Count} events in {Country} from {Start} – only the first {Max} are fetched",
+                    totalElements, country, start, MaxResults);
+            }
+            foreach (var e in events) byId[e.Id] = e;
+            if (page + 1 >= totalPages) break;
+        }
+    }
+
+    async Task<(List<CultureEvent> Events, int TotalPages, int TotalElements)> GetPageAsync(
+        string country, DateTimeOffset start, DateTimeOffset end, int page, DateTimeOffset now, CancellationToken ct)
+    {
+        // The Discovery API takes its key as a query parameter.
+        var url = $"{Endpoint}?apikey={Uri.EscapeDataString(Key)}&countryCode={Uri.EscapeDataString(country)}" +
+                  $"&startDateTime={Iso(start)}&endDateTime={Iso(end)}" +
+                  $"&size={PageSize}&page={page}&sort=date,asc&locale=*";
+        using var res = await http.GetAsync(url, ct);
+        if (!res.IsSuccessStatusCode)
+        {
+            // Don't log the URL: it carries the key.
+            var reason = Reason(await res.Content.ReadAsStringAsync(ct))?.Replace(Key, "…");
+            log.LogWarning("Ticketmaster answered {Status} ({Reason}) for {Country} from {Start} page {Page}",
+                (int)res.StatusCode, reason, country, start, page);
+            throw new HttpRequestException(reason is null
+                ? $"Ticketmaster svarede {(int)res.StatusCode}."
+                : $"Ticketmaster svarede {(int)res.StatusCode}: {reason}");
+        }
+        var result = Parse(await res.Content.ReadAsStringAsync(ct), now);
+        if (_options.DelayMs > 0) await Task.Delay(_options.DelayMs, ct);
         return result;
     }
 
-    public static (List<CultureEvent> Events, int TotalPages) Parse(string json, DateTimeOffset now)
+    static string Iso(DateTimeOffset t) => t.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+
+    public static (List<CultureEvent> Events, int TotalPages, int TotalElements) Parse(string json, DateTimeOffset now)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
-        var totalPages = root.TryGetProperty("page", out var p) && p.TryGetProperty("totalPages", out var tp) && tp.TryGetInt32(out var n) ? n : 1;
+        var hasPage = root.TryGetProperty("page", out var p);
+        var totalPages = hasPage && p.TryGetProperty("totalPages", out var tp) && tp.TryGetInt32(out var n) ? n : 1;
+        var totalElements = hasPage && p.TryGetProperty("totalElements", out var te) && te.TryGetInt32(out var elements) ? elements : 0;
         var list = new List<CultureEvent>();
         if (!root.TryGetProperty("_embedded", out var embedded) || !embedded.TryGetProperty("events", out var events))
-            return (list, totalPages);
+            return (list, totalPages, totalElements);
 
         foreach (var e in events.EnumerateArray())
         {
@@ -105,7 +150,7 @@ public class TicketmasterSource(HttpClient http, IOptions<TicketmasterOptions> o
                 ImageUrl: BestImage(e),
                 FirstSeenUtc: now));
         }
-        return (list, totalPages);
+        return (list, totalPages, totalElements);
     }
 
     /// <summary>

@@ -14,7 +14,8 @@ Kører på https://kultur.kaspert.dk. Konceptet står i [`docs/koncept.md`](docs
 - **Dig** ("Det tror jeg om dig"): smagsprofilen med egne ord, for kultur og for sport. Og knappen
   "Led efter nyt nu".
 - **Natlig scanning** (GitHub Actions → `POST /api/scan`) af kilderne. Første kilde er
-  Ticketmaster Discovery API (Danmark).
+  Ticketmaster Discovery API (Danmark, 12 måneder frem – søgt måned for måned, fordi API'et højst
+  giver 1000 resultater pr. søgning).
 
 POC: én bruger med ét kodeord, ingen database (JSON-filer i `App_Data`, personlige data under
 `App_Data/users/{id}/`).
