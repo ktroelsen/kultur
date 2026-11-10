@@ -7,6 +7,8 @@ export function useGroups(view: GroupView) {
   const [groups, setGroups] = useState<EventGroup[] | null>(null);
   const [lastVisit, setLastVisit] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The group just turned down, for "Fortryd".
+  const [removed, setRemoved] = useState<EventGroup | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -25,14 +27,35 @@ export function useGroups(view: GroupView) {
 
   const choose = useCallback(async (key: string, choice: SeriesChoice | null) => {
     const before = groups;
+    const group = groups?.find((g) => g.key === key) ?? null;
     setGroups((list) => list?.filter((g) => g.key !== key) ?? null);
     try {
       await setChoice(key, choice);
+      setRemoved(choice === 'Dismissed' ? group : null);
     } catch (err) {
       setGroups(before);
       setError(errorMessage(err, 'Kunne ikke gemme dit valg.'));
     }
   }, [groups]);
 
-  return { groups, lastVisit, error, choose, reload: load };
+  // Brings the group just turned down back (all its dates).
+  const undo = useCallback(async () => {
+    if (!removed) return;
+    setRemoved(null);
+    try {
+      await setChoice(removed.key, null);
+      await load();
+    } catch (err) {
+      setError(errorMessage(err, 'Kunne ikke fortryde.'));
+    }
+  }, [removed, load]);
+
+  // The offer to undo goes away after a while.
+  useEffect(() => {
+    if (!removed) return;
+    const timer = setTimeout(() => setRemoved(null), 8000);
+    return () => clearTimeout(timer);
+  }, [removed]);
+
+  return { groups, lastVisit, error, choose, removed, undo, reload: load };
 }
