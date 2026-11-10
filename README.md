@@ -6,9 +6,11 @@ Kører på https://kultur.kaspert.dk. Konceptet står i [`docs/koncept.md`](docs
 
 ## Det kan den nu
 
-- **Siden sidst** (forside): arrangementer, der er dukket op siden sidste besøg.
-- **Til dig**: alle kommende arrangementer, jeg ikke har sagt nej tak til, delt i afstandszoner
-  (København, resten af Danmark, udlandet) og med filter på kategori.
+- **Siden sidst** (forside): alle forslag, du ikke har taget stilling til – én gruppe pr. arrangement
+  med alle dets datoer (fra–til, antal, byer, laveste pris), det nye øverst. **Vælg til** flytter
+  gruppen til **Til dig**; **Nej tak** fjerner alle datoer.
+- **Til dig**: det, du har valgt til. Klik på en gruppe for at se alle datoer og fjerne dem, du ikke
+  vil have ("Kun denne" / "Datoen"), eller **Gem** den dato, du vil til (så ligger den under **Gemt**).
 - **Smag**: ét emne ad gangen – kategori, genre, kunstner/hold eller spillested – vurderet fra
   *aldrig* til *meget* (eller sprunget over). Vurderingerne skjuler det, du aldrig vil, sorterer
   "Til dig" efter, hvor godt det passer, og hvert forslag siger hvorfor ("Du sagde 'meget' til …").

@@ -133,3 +133,39 @@ export const fetchEvents = (view: EventView) => api<EventList>(`/api/events?view
 
 export const setReaction = (id: string, reaction: Reaction | null, reason: DismissReason | null = null) =>
   api<void>(`/api/events/${encodeURIComponent(id)}/reaction`, { method: 'PUT', json: { reaction, reason } });
+
+/** All dates of one event as one entry; key is the series key. */
+export type EventGroup = {
+  key: string;
+  title: string;
+  category: Category;
+  genre: string | null;
+  performers: string[] | null;
+  /** yyyy-MM-dd */
+  from: string | null;
+  to: string | null;
+  dates: number;
+  cities: string[];
+  priceFrom: number | null;
+  currency: string | null;
+  imageUrl: string | null;
+  note: string | null;
+  saleStart: string | null;
+  zone: Zone;
+  isNew: boolean;
+  score: number;
+  because: Topic | null;
+  becauseRating: Interest | null;
+  chosen: boolean;
+};
+
+export type GroupView = 'inbox' | 'chosen';
+export type GroupList = { lastVisitUtc: string | null; groups: EventGroup[] };
+export type GroupDetail = { group: EventGroup | null; key: string; chosen: boolean; dismissed: boolean; events: EventItem[] };
+/** Chosen: "Vælg til" (on "Til dig"); Dismissed: "Nej tak" to every date; null: undecided. */
+export type SeriesChoice = 'Chosen' | 'Dismissed';
+
+export const fetchGroups = (view: GroupView) => api<GroupList>(`/api/groups?view=${view}`);
+export const fetchGroup = (key: string) => api<GroupDetail>(`/api/groups/events?key=${encodeURIComponent(key)}`);
+export const setChoice = (key: string, choice: SeriesChoice | null) =>
+  api<void>('/api/groups/choice', { method: 'PUT', json: { key, choice } });

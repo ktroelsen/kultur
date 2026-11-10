@@ -100,6 +100,13 @@ festivaler og IMAX-events tages med i første omgang.
 - **Billetsalgsstart** er førsteklasses – især for sport (landskampe, slutrunder, Denmark Open),
   der bliver udsolgt hurtigt.
 
+## Grupper
+
+Et arrangement med mange datoer (en turné, et foredrag rundt i landet, et løb år efter år) vises som
+**én gruppe** med dato fra–til. "Siden sidst" er indbakken: alt uafklaret, det nye øverst. *Vælg til*
+flytter gruppen til "Til dig"; der kan man åbne den, se alle datoer og fjerne dem, man ikke vil have,
+eller gemme den dato, man vil til.
+
 ## Skærme
 
 - **Siden sidst** (forside): nyt siden sidste besøg – fund fra overvågninger, billetsalg der starter, nye forslag.

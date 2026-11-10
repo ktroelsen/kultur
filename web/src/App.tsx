@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { useAuth } from './auth';
 import Layout from './components/Layout';
 import ForYou from './pages/ForYou';
+import Group from './pages/Group';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Saved from './pages/Saved';
@@ -19,6 +20,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<SinceLast />} />
         <Route path="for-you" element={<ForYou />} />
+        <Route path="group" element={<Group />} />
         <Route path="taste" element={<Taste />} />
         <Route path="saved" element={<Saved />} />
         <Route path="profile" element={<Profile />} />

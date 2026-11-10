@@ -1,11 +1,10 @@
-import { Bookmark, CircleHelp, ExternalLink, Heart, Ticket, X } from 'lucide-react';
+import { Bookmark, ExternalLink, Heart, Ticket, X } from 'lucide-react';
 import { useState } from 'react';
 import { categoryNames, interestNames, type DismissReason, type EventItem, type Reaction } from '../api';
 import { genreName, price, topicName, upcomingSale, when, where } from '../format';
 
 const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = [
   { reaction: 'Saved', label: 'Gem', icon: Bookmark },
-  { reaction: 'Maybe', label: 'Måske', icon: CircleHelp },
   { reaction: 'NotInterested', label: 'Nej tak', icon: X },
 ];
 
