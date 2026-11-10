@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { api } from '../api';
 import GroupList from '../components/GroupList';
+import UndoBar from '../components/UndoBar';
 import { useGroups } from '../useGroups';
 
 const visitFormat = new Intl.DateTimeFormat('da-DK', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -8,7 +9,7 @@ const visitFormat = new Intl.DateTimeFormat('da-DK', { weekday: 'long', day: 'nu
 // The front page: every suggestion not yet decided on, one entry per event with all its dates – new
 // ones first. "Vælg til" moves it to "Til dig". Opening the page counts as having seen what's new.
 export default function SinceLast() {
-  const { groups, lastVisit, error, choose } = useGroups('inbox');
+  const { groups, lastVisit, error, choose, removed, undo } = useGroups('inbox');
   const marked = useRef(false);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function SinceLast() {
           ]}
         />
       )}
+      {removed && <UndoBar text={`Fjernet: ${removed.title} – alle datoer`} onUndo={undo} />}
     </section>
   );
 }

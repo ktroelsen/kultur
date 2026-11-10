@@ -1,9 +1,10 @@
 import GroupList from '../components/GroupList';
+import UndoBar from '../components/UndoBar';
 import { useGroups } from '../useGroups';
 
 // What you've chosen from "Siden sidst", by date. Open one to see its dates and drop the ones you don't want.
 export default function ForYou() {
-  const { groups, error, choose } = useGroups('chosen');
+  const { groups, error, choose, removed, undo } = useGroups('chosen');
 
   return (
     <section>
@@ -15,6 +16,7 @@ export default function ForYou() {
       {groups && (
         <GroupList groups={groups} onChoice={choose} empty="Du har ikke valgt noget til endnu. Tryk “Vælg til” under Siden sidst." />
       )}
+      {removed && <UndoBar text={`Fjernet: ${removed.title} – alle datoer`} onUndo={undo} />}
     </section>
   );
 }
