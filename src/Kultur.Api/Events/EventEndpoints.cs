@@ -36,40 +36,16 @@ public static class EventEndpoints
         // new = arrived since the last visit ("Siden sidst"), forYou = what fits the ratings (nearest
         // zone first, best match first), saved = Gem + Måske. Events turned down – "Nej tak", or a
         // topic rated "aldrig" – are left out of new and forYou.
-        events.MapGet("/", async (string? view, ClaimsPrincipal user, EventCatalog catalog, UserData data,
-            InterestStore interests, CancellationToken ct) =>
+        events.MapGet("/", async (string? view, ClaimsPrincipal user, EventJudge judge, CancellationToken ct) =>
         {
             var parsed = EventView.ForYou;
             if (view is not null && !Enum.TryParse(view, ignoreCase: true, out parsed))
                 return Results.Problem("Ukendt visning.", statusCode: 400);
 
-            var userId = Users.Id(user);
-            var lastVisit = (await data.StateAsync(userId, ct)).LastVisitUtc;
-            var reactions = await data.ReactionsAsync(userId, ct);
-            var learning = await data.LearningAsync(userId, ct);
-            var learned = learning.Signals();
-            var ratings = await interests.RatingsAsync(userId, ct);
-            var useZones = ratings.Count >= RatingsBeforeZoneThresholds;
+            var judgement = await judge.JudgeAsync(Users.Id(user), ct);
+            var (judged, lastVisit, useZones) = (judgement.Events, judgement.LastVisitUtc, judgement.UseZones);
 
-            var judged = (await catalog.AllAsync(ct)).Select(e =>
-            {
-                var fit = TasteModel.FitOf(e, ratings, learned);
-                // Dates of a series turned down, and everything on a busy day, count as "Nej tak" too –
-                // also events found later. A reaction of the event's own always wins.
-                Reaction? reaction = reactions.TryGetValue(e.Id, out var r) ? r
-                    : learning.DismissedSeries.ContainsKey(Series.KeyOf(e)) ? Reaction.NotInterested
-                    : e.Date is { } d && learning.BusyDays.ContainsKey(d.ToString("yyyy-MM-dd")) ? Reaction.NotInterested
-                    : null;
-                var item = new EventItem(
-                    e,
-                    Zones.Of(e.City, e.CountryCode),
-                    reaction,
-                    lastVisit is null || e.FirstSeenUtc > lastVisit,
-                    fit.Score, fit.Because, fit.BecauseRating);
-                return (Item: item, fit.Hidden);
-            }).ToList();
-
-            bool TurnedDown((EventItem Item, bool Hidden) x) => x.Hidden || x.Item.Reaction == Reaction.NotInterested;
+            static bool TurnedDown(Judged x) => x.TurnedDown;
 
             var items = parsed switch
             {

@@ -73,6 +73,51 @@ public class UserData(string usersDir, TimeProvider clock)
         finally { _lock.Release(); }
     }
 
+    /// <summary>
+    /// "Vælg til" (Chosen: the series goes to "Til dig" and teaches like Gem), "Nej tak" to the whole
+    /// series (Dismissed: as "Nej tak – begivenheden"), or null: back to undecided. Representative is a
+    /// date of the series, for what it teaches.
+    /// </summary>
+    public async Task SetSeriesChoiceAsync(string userId, string series, CultureEvent representative, SeriesChoice? choice,
+        CancellationToken ct = default)
+    {
+        await _lock.WaitAsync(ct);
+        try
+        {
+            var reactions = await LoadReactionsAsync(userId, ct);
+            var learning = await LoadLearningAsync(userId, ct);
+            var chosenKey = "series:" + series;
+
+            if (learning.ChosenSeries.Remove(series)) learning.Applied.Remove(chosenKey);
+            if (learning.DismissedSeries.Remove(series, out var trigger))
+            {
+                reactions.Remove(trigger);
+                learning.Reasons.Remove(trigger);
+                learning.Applied.Remove(trigger);
+            }
+
+            switch (choice)
+            {
+                case SeriesChoice.Chosen:
+                    learning.ChosenSeries[series] = representative.Id;
+                    var lessons = Lessons.From(representative, Reaction.Saved, null);
+                    if (lessons.Count > 0) learning.Applied[chosenKey] = lessons;
+                    break;
+                case SeriesChoice.Dismissed:
+                    var id = representative.Id;
+                    learning.DismissedSeries[series] = id;
+                    reactions[id] = Reaction.NotInterested;
+                    learning.Reasons[id] = DismissReason.Event;
+                    learning.Applied[id] = Lessons.From(representative, Reaction.NotInterested, DismissReason.Event);
+                    break;
+            }
+
+            await JsonFile.WriteAsync(FileOf(userId, "reactions.json"), reactions, ct);
+            await JsonFile.WriteAsync(FileOf(userId, "learning.json"), learning, ct);
+        }
+        finally { _lock.Release(); }
+    }
+
     /// <summary>What the buttons have taught, plus the hidden series.</summary>
     public async Task<Learning> LearningAsync(string userId, CancellationToken ct = default)
     {
@@ -95,6 +140,9 @@ public class UserData(string usersDir, TimeProvider clock)
         await JsonFile.ReadAsync<Dictionary<string, Reaction>>(FileOf(userId, "reactions.json"), ct) ?? [];
 }
 
+/// <summary>A choice about a whole series (every date of one event).</summary>
+public enum SeriesChoice { Chosen, Dismissed }
+
 /// <summary>
 /// What the buttons have taught. Applied keeps each event's own lessons, so taking a reaction back
 /// takes back exactly what it taught – also after the event itself is over and gone.
@@ -105,6 +153,9 @@ public class Learning
 
     /// <summary>Series hidden by "Nej tak – arrangementet", and the date it was pressed on.</summary>
     public Dictionary<string, string> DismissedSeries { get; set; } = [];
+
+    /// <summary>Series chosen with "Vælg til" (they're on "Til dig"), and the date it was pressed on.</summary>
+    public Dictionary<string, string> ChosenSeries { get; set; } = [];
 
     /// <summary>Days marked busy ("Nej tak – datoen", yyyy-MM-dd), and the event it was pressed on.</summary>
     public Dictionary<string, string> BusyDays { get; set; } = [];

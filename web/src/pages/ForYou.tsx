@@ -1,54 +1,20 @@
-import { useState } from 'react';
-import { categoryNames, zoneNames, type Category, type Zone } from '../api';
-import EventList from '../components/EventList';
-import { useEvents } from '../useEvents';
+import GroupList from '../components/GroupList';
+import { useGroups } from '../useGroups';
 
-const zones: Zone[] = ['Copenhagen', 'Denmark', 'Abroad'];
-
-// Everything not turned down, nearest first. Claude will rank this against the profile later.
+// What you've chosen from "Siden sidst", by date. Open one to see its dates and drop the ones you don't want.
 export default function ForYou() {
-  const { items, error, react } = useEvents('forYou');
-  const [category, setCategory] = useState<Category | null>(null);
-
-  const shown = items?.filter((i) => category === null || i.event.category === category) ?? [];
-  const categories = [...new Set(items?.map((i) => i.event.category))];
+  const { groups, error, choose } = useGroups('chosen');
 
   return (
     <section>
       <h1 className="text-2xl font-semibold">Til dig</h1>
-
-      {categories.length > 1 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {[null, ...categories].map((c) => (
-            <button
-              key={c ?? 'all'}
-              onClick={() => setCategory(c)}
-              className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                category === c ? 'border-accent bg-accent/15 text-accent' : 'border-line text-muted hover:text-fg'
-              }`}
-            >
-              {c ? categoryNames[c] : 'Alt'}
-            </button>
-          ))}
-        </div>
-      )}
+      <p className="mt-1 text-sm text-muted">Det, du har valgt til. Åbn et for at se datoerne og fjerne dem, du ikke vil have.</p>
 
       {error && <p className="mt-6 text-danger">{error}</p>}
-      {items === null && !error && <p className="mt-6 text-muted">Henter…</p>}
-      {items !== null && shown.length === 0 && (
-        <div className="mt-6 rounded-2xl bg-surface p-6 text-muted">Ingen arrangementer endnu.</div>
+      {groups === null && !error && <p className="mt-6 text-muted">Henter…</p>}
+      {groups && (
+        <GroupList groups={groups} onChoice={choose} empty="Du har ikke valgt noget til endnu. Tryk “Vælg til” under Siden sidst." />
       )}
-
-      {zones.map((zone) => {
-        const inZone = shown.filter((i) => i.zone === zone);
-        if (inZone.length === 0) return null;
-        return (
-          <div key={zone} className="mt-8">
-            <h2 className="mb-3 text-sm font-medium tracking-wide text-muted uppercase">{zoneNames[zone]}</h2>
-            <EventList items={inZone} onReact={react} />
-          </div>
-        );
-      })}
     </section>
   );
 }

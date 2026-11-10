@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Kultur.Api.Ai;
 using Kultur.Api.Auth;
 using Kultur.Api.Events;
+using Kultur.Api.Groups;
 using Kultur.Api.Profile;
 using Kultur.Api.Scan;
 using Kultur.Api.Taste;
@@ -23,6 +24,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(sp => new EventCatalog(Path.Combine(dataDir, "events.json"), sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(sp => new UserData(usersDir, sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(sp => new InterestStore(usersDir, sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddScoped<EventJudge>();
 
 // Event sources, scanned nightly (POST /api/scan). Each is skipped while it lacks its key.
 builder.Services.AddSingleton<ScanGate>();
@@ -118,6 +120,7 @@ app.MapGet("/api/health", (IOptions<TicketmasterOptions> ticketmaster, IOptions<
 
 app.MapAuthEndpoints();
 app.MapEventEndpoints();
+app.MapGroupEndpoints();
 app.MapProfileEndpoints(usersDir);
 app.MapScanEndpoints();
 app.MapTasteEndpoints();

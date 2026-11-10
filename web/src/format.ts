@@ -1,4 +1,4 @@
-import { categoryNames, type Category, type CultureEvent, type Topic } from './api';
+import { categoryNames, type Category, type CultureEvent, type EventGroup, type Topic } from './api';
 
 const dayFormat = new Intl.DateTimeFormat('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const timeFormat = new Intl.DateTimeFormat('da-DK', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Copenhagen' });
@@ -53,4 +53,37 @@ export function topicName(t: Pick<Topic, 'kind' | 'name'>) {
   if (t.kind === 'Category') return categoryNames[t.name as Category] ?? t.name;
   if (t.kind === 'Genre') return genreName(t.name);
   return t.name;
+}
+
+const shortDay = new Intl.DateTimeFormat('da-DK', { day: 'numeric', month: 'short' });
+const fullDay = new Intl.DateTimeFormat('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+function localDate(date: string) {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** "15. jan. – 2. mar. 2027", "1. dec. 2026 – 3. jan. 2027", or a single day. */
+export function dateRange(g: Pick<EventGroup, 'from' | 'to'>) {
+  if (!g.from) return 'Dato følger';
+  const from = localDate(g.from);
+  if (!g.to || g.to === g.from) return fullDay.format(from);
+  const to = localDate(g.to);
+  const start = from.getFullYear() === to.getFullYear() ? shortDay.format(from) : `${shortDay.format(from)} ${from.getFullYear()}`;
+  return `${start} – ${shortDay.format(to)} ${to.getFullYear()}`;
+}
+
+export function groupPrice(g: Pick<EventGroup, 'priceFrom' | 'currency'>) {
+  if (g.priceFrom == null) return null;
+  const amount = Math.round(g.priceFrom).toLocaleString('da-DK');
+  return g.currency && g.currency !== 'DKK' ? `fra ${amount} ${g.currency}` : `fra ${amount} kr.`;
+}
+
+/** "København K, Odense og 3 andre" */
+export function cityList(cities: string[], more = 0) {
+  if (cities.length === 0) return null;
+  if (cities.length === 1 && more === 0) return cities[0];
+  const shown = cities.slice(0, 2);
+  const rest = cities.length - shown.length + more;
+  return rest > 0 ? `${shown.join(', ')} og ${rest} ${rest === 1 ? 'anden by' : 'andre byer'}` : shown.join(' og ');
 }

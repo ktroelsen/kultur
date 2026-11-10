@@ -7,7 +7,7 @@ export default function Saved() {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Gemt</h1>
-      <p className="mt-1 text-sm text-muted">Det, du har gemt eller sagt måske til.</p>
+      <p className="mt-1 text-sm text-muted">De datoer, du har gemt.</p>
 
       {error && <p className="mt-6 text-danger">{error}</p>}
       {items === null && !error && <p className="mt-6 text-muted">Henter…</p>}

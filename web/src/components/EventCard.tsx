@@ -1,15 +1,16 @@
-import { Bookmark, CircleHelp, ExternalLink, Heart, Ticket, X } from 'lucide-react';
+import { Bookmark, ExternalLink, Heart, Ticket, X } from 'lucide-react';
 import { useState } from 'react';
 import { categoryNames, interestNames, type DismissReason, type EventItem, type Reaction } from '../api';
 import { genreName, price, topicName, upcomingSale, when, where } from '../format';
 
 const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = [
   { reaction: 'Saved', label: 'Gem', icon: Bookmark },
-  { reaction: 'Maybe', label: 'Måske', icon: CircleHelp },
   { reaction: 'NotInterested', label: 'Nej tak', icon: X },
 ];
 
-const reasons: { reason: DismissReason; label: string }[] = [
+// No reason = only this one, and nothing learned.
+const reasons: { reason: DismissReason | null; label: string }[] = [
+  { reason: null, label: 'Kun denne' },
   { reason: 'Date', label: 'Datoen – jeg er optaget hele dagen' },
   { reason: 'Event', label: 'Begivenheden – fjern alle datoer' },
 ];
@@ -60,7 +61,7 @@ export default function EventCard({
             <div className="mt-2 flex flex-wrap gap-2">
               {reasons.map(({ reason, label }) => (
                 <button
-                  key={reason}
+                  key={reason ?? 'this'}
                   onClick={() => { setAskWhy(false); onReact('NotInterested', reason); }}
                   className="rounded-full border border-line px-3 py-1.5 text-left text-sm hover:border-accent hover:text-accent"
                 >

@@ -1,40 +1,42 @@
 import { useEffect, useRef } from 'react';
 import { api } from '../api';
-import EventList from '../components/EventList';
-import { useEvents } from '../useEvents';
+import GroupList from '../components/GroupList';
+import { useGroups } from '../useGroups';
 
 const visitFormat = new Intl.DateTimeFormat('da-DK', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
-// The front page: what has turned up since the last visit. Opening it counts as having seen it,
-// but the list stays on screen until you leave.
+// The front page: every suggestion not yet decided on, one entry per event with all its dates – new
+// ones first. "Vælg til" moves it to "Til dig". Opening the page counts as having seen what's new.
 export default function SinceLast() {
-  const { items, lastVisit, error, react } = useEvents('new');
+  const { groups, lastVisit, error, choose } = useGroups('inbox');
   const marked = useRef(false);
 
   useEffect(() => {
-    if (items === null || marked.current) return;
+    if (groups === null || marked.current) return;
     marked.current = true;
     api('/api/events/seen', { method: 'POST' }).catch(() => {});
-  }, [items]);
+  }, [groups]);
 
   return (
     <section>
       <h1 className="text-2xl font-semibold">Siden sidst</h1>
       <p className="mt-1 text-sm text-muted">
-        {lastVisit ? `Nyt siden ${visitFormat.format(new Date(lastVisit))}` : 'Alt, jeg har fundet indtil nu'}
+        {lastVisit ? `Nyt siden ${visitFormat.format(new Date(lastVisit))} står øverst.` : 'Alt, jeg har fundet indtil nu.'}{' '}
+        Vælg det til, du har lyst til.
       </p>
 
       {error && <p className="mt-6 text-danger">{error}</p>}
-      {items === null && !error && <p className="mt-6 text-muted">Henter…</p>}
-      {items?.length === 0 && (
-        <div className="mt-6 rounded-2xl bg-surface p-6 text-muted">
-          Intet nyt siden sidst. Jeg kigger efter igen i nat.
-        </div>
-      )}
-      {items && items.length > 0 && (
-        <div className="mt-6">
-          <EventList items={items} onReact={react} />
-        </div>
+      {groups === null && !error && <p className="mt-6 text-muted">Henter…</p>}
+      {groups && (
+        <GroupList
+          groups={groups}
+          onChoice={choose}
+          empty="Intet nyt at tage stilling til. Jeg kigger efter igen i nat."
+          sections={[
+            { title: 'Nyt', filter: (g) => g.isNew },
+            { title: 'Forslag', filter: (g) => !g.isNew },
+          ]}
+        />
       )}
     </section>
   );
