@@ -1,11 +1,11 @@
-import { ChevronRight, Heart, Plus, Ticket, X } from 'lucide-react';
+import { Ban, ChevronRight, Heart, Plus, Ticket, X } from 'lucide-react';
 import { Link } from 'react-router';
 import { categoryNames, interestNames, type EventGroup, type SeriesChoice } from '../api';
 import { cityList, dateRange, genreName, groupPrice, topicName } from '../format';
 
 const saleFormat = new Intl.DateTimeFormat('da-DK', { day: 'numeric', month: 'short' });
 
-/** One event with all its dates. "Siden sidst": Vælg til / Nej tak (every date, one click). "Til dig": take it off again. */
+/** One event with all its dates. "Siden sidst": Vælg til / Nej tak (the dates shown) / Nej tak alle (the event, also later dates). "Til dig": take it off again. */
 export default function GroupCard({
   group: g,
   onChoice,
@@ -76,11 +76,20 @@ export default function GroupCard({
               Vælg til
             </button>
             <button
-              onClick={() => onChoice('Dismissed')}
+              onClick={() => onChoice('Declined')}
+              title="Fjern de datoer, der står her"
               className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-muted hover:text-fg"
             >
               <X className="h-4 w-4" />
               Nej tak
+            </button>
+            <button
+              onClick={() => onChoice('Dismissed')}
+              title="Nej tak til arrangementet uanset dato og sted – også fremtidige datoer"
+              className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-muted hover:text-fg"
+            >
+              <Ban className="h-4 w-4" />
+              Nej tak alle
             </button>
           </>
         )}

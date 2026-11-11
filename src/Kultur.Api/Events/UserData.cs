@@ -74,12 +74,14 @@ public class UserData(string usersDir, TimeProvider clock)
     }
 
     /// <summary>
-    /// "Vælg til" (Chosen: the series goes to "Til dig" and teaches like Gem), "Nej tak" to the whole
-    /// series (Dismissed: as "Nej tak – begivenheden"), or null: back to undecided. Representative is a
-    /// date of the series, for what it teaches.
+    /// "Vælg til" (Chosen: the series goes to "Til dig" and teaches like Gem), "Nej tak" (Declined: the
+    /// dates listed now go, nothing learned – dates found later may turn up), "Nej tak alle" (Dismissed:
+    /// the event whatever the date and place, also later dates; teaches like "Nej tak – begivenheden"),
+    /// or null: back to undecided. Representative is a date of the series, for what it teaches;
+    /// current are the series' dates listed now, for Declined.
     /// </summary>
     public async Task SetSeriesChoiceAsync(string userId, string series, CultureEvent representative, SeriesChoice? choice,
-        CancellationToken ct = default)
+        IReadOnlyCollection<string>? current = null, CancellationToken ct = default)
     {
         await _lock.WaitAsync(ct);
         try
@@ -95,6 +97,11 @@ public class UserData(string usersDir, TimeProvider clock)
                 learning.Reasons.Remove(trigger);
                 learning.Applied.Remove(trigger);
             }
+            if (learning.DeclinedSeries.Remove(series, out var declined))
+            {
+                foreach (var id in declined)
+                    if (reactions.GetValueOrDefault(id) == Reaction.NotInterested) reactions.Remove(id);
+            }
 
             switch (choice)
             {
@@ -102,6 +109,12 @@ public class UserData(string usersDir, TimeProvider clock)
                     learning.ChosenSeries[series] = representative.Id;
                     var lessons = Lessons.From(representative, Reaction.Saved, null);
                     if (lessons.Count > 0) learning.Applied[chosenKey] = lessons;
+                    break;
+                case SeriesChoice.Declined:
+                    // Only dates without a reaction of their own: a saved date stays saved.
+                    var ids = (current ?? [representative.Id]).Where(i => !reactions.ContainsKey(i)).ToList();
+                    foreach (var i in ids) reactions[i] = Reaction.NotInterested;
+                    learning.DeclinedSeries[series] = ids;
                     break;
                 case SeriesChoice.Dismissed:
                     var id = representative.Id;
@@ -140,8 +153,11 @@ public class UserData(string usersDir, TimeProvider clock)
         await JsonFile.ReadAsync<Dictionary<string, Reaction>>(FileOf(userId, "reactions.json"), ct) ?? [];
 }
 
-/// <summary>A choice about a whole series (every date of one event).</summary>
-public enum SeriesChoice { Chosen, Dismissed }
+/// <summary>
+/// A choice about a whole series: Chosen ("Vælg til"), Declined ("Nej tak": the dates listed now),
+/// Dismissed ("Nej tak alle": the event whatever the date and place, also later dates).
+/// </summary>
+public enum SeriesChoice { Chosen, Dismissed, Declined }
 
 /// <summary>
 /// What the buttons have taught. Applied keeps each event's own lessons, so taking a reaction back
@@ -153,6 +169,9 @@ public class Learning
 
     /// <summary>Series hidden by "Nej tak – arrangementet", and the date it was pressed on.</summary>
     public Dictionary<string, string> DismissedSeries { get; set; } = [];
+
+    /// <summary>Series declined with "Nej tak" on the group, and the dates it turned down then.</summary>
+    public Dictionary<string, List<string>> DeclinedSeries { get; set; } = [];
 
     /// <summary>Series chosen with "Vælg til" (they're on "Til dig"), and the date it was pressed on.</summary>
     public Dictionary<string, string> ChosenSeries { get; set; } = [];

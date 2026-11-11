@@ -8,7 +8,7 @@ export function useGroups(view: GroupView) {
   const [lastVisit, setLastVisit] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // The group just turned down, for "Fortryd".
-  const [removed, setRemoved] = useState<EventGroup | null>(null);
+  const [removed, setRemoved] = useState<{ group: EventGroup; all: boolean } | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -31,7 +31,7 @@ export function useGroups(view: GroupView) {
     setGroups((list) => list?.filter((g) => g.key !== key) ?? null);
     try {
       await setChoice(key, choice);
-      setRemoved(choice === 'Dismissed' ? group : null);
+      setRemoved(group && (choice === 'Dismissed' || choice === 'Declined') ? { group, all: choice === 'Dismissed' } : null);
     } catch (err) {
       setGroups(before);
       setError(errorMessage(err, 'Kunne ikke gemme dit valg.'));
@@ -43,7 +43,7 @@ export function useGroups(view: GroupView) {
     if (!removed) return;
     setRemoved(null);
     try {
-      await setChoice(removed.key, null);
+      await setChoice(removed.group.key, null);
       await load();
     } catch (err) {
       setError(errorMessage(err, 'Kunne ikke fortryde.'));

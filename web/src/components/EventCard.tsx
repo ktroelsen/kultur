@@ -1,19 +1,6 @@
-import { Bookmark, ExternalLink, Heart, Ticket, X } from 'lucide-react';
-import { useState } from 'react';
+import { Ban, Bookmark, ExternalLink, Heart, Ticket, X } from 'lucide-react';
 import { categoryNames, interestNames, type DismissReason, type EventItem, type Reaction } from '../api';
 import { genreName, price, topicName, upcomingSale, when, where } from '../format';
-
-const choices: { reaction: Reaction; label: string; icon: typeof Bookmark }[] = [
-  { reaction: 'Saved', label: 'Gem', icon: Bookmark },
-  { reaction: 'NotInterested', label: 'Nej tak', icon: X },
-];
-
-// No reason = only this one, and nothing learned.
-const reasons: { reason: DismissReason | null; label: string }[] = [
-  { reason: null, label: 'Kun denne' },
-  { reason: 'Date', label: 'Datoen – jeg er optaget hele dagen' },
-  { reason: 'Event', label: 'Begivenheden – fjern alle datoer' },
-];
 
 export default function EventCard({
   item,
@@ -22,7 +9,6 @@ export default function EventCard({
   item: EventItem;
   onReact: (reaction: Reaction | null, reason?: DismissReason | null) => void;
 }) {
-  const [askWhy, setAskWhy] = useState(false);
   const { event: e, reaction, because, becauseRating } = item;
   const sale = upcomingSale(e);
   const cost = price(e);
@@ -55,42 +41,21 @@ export default function EventCard({
           </p>
         )}
 
-        {askWhy ? (
-          <div className="mt-4">
-            <p className="text-sm text-muted">Hvorfor nej tak?</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {reasons.map(({ reason, label }) => (
-                <button
-                  key={reason ?? 'this'}
-                  onClick={() => { setAskWhy(false); onReact('NotInterested', reason); }}
-                  className="rounded-full border border-line px-3 py-1.5 text-left text-sm hover:border-accent hover:text-accent"
-                >
-                  {label}
-                </button>
-              ))}
-              <button onClick={() => setAskWhy(false)} className="px-2 py-1.5 text-sm text-muted hover:text-fg">
-                Fortryd
-              </button>
-            </div>
-          </div>
-        ) : (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {choices.map(({ reaction: r, label, icon: Icon }) => {
-            const active = reaction === r;
-            return (
-              <button
-                key={r}
-                onClick={() => (r === 'NotInterested' && !active ? setAskWhy(true) : onReact(active ? null : r))}
-                aria-pressed={active}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition ${
-                  active ? 'border-accent bg-accent text-on-accent' : 'border-line text-muted hover:text-fg'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            );
-          })}
+          <Choice active={reaction === 'Saved'} icon={Bookmark} label="Gem" onClick={() => onReact(reaction === 'Saved' ? null : 'Saved')} />
+          {reaction === 'NotInterested' ? (
+            <Choice active icon={X} label="Nej tak · fortryd" onClick={() => onReact(null)} />
+          ) : (
+            <>
+              <Choice icon={X} label="Nej tak" title="Kun denne dato" onClick={() => onReact('NotInterested')} />
+              <Choice
+                icon={Ban}
+                label="Nej tak alle"
+                title="Arrangementet uanset dato og sted – også fremtidige datoer"
+                onClick={() => onReact('NotInterested', 'Event')}
+              />
+            </>
+          )}
           <a
             href={e.url}
             target="_blank"
@@ -101,8 +66,40 @@ export default function EventCard({
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
+        {reaction !== 'NotInterested' && e.date && (
+          <button onClick={() => onReact('NotInterested', 'Date')} className="mt-2 text-xs text-muted underline hover:text-fg">
+            Optaget den dag – skjul alt den dato
+          </button>
         )}
       </div>
     </article>
+  );
+}
+
+function Choice({
+  active = false,
+  icon: Icon,
+  label,
+  title,
+  onClick,
+}: {
+  active?: boolean;
+  icon: typeof X;
+  label: string;
+  title?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition ${
+        active ? 'border-accent bg-accent text-on-accent' : 'border-line text-muted hover:text-fg'
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
   );
 }
