@@ -98,6 +98,34 @@ public class GroupTests
     }
 
     [Fact]
+    public async Task No_thanks_to_a_group_drops_the_dates_shown_now_but_later_ones_turn_up()
+    {
+        var (factory, client) = await WithEventsAsync();
+        using var _ = factory;
+        await client.PutAsJsonAsync("/api/events/ticketmaster:r1/reaction", new { reaction = "Saved" }); // keeps its own
+        var scoreBefore = (await client.GetAsync<GroupDetail>($"/api/groups/events?key={Uri.EscapeDataString(Rane)}"))!
+            .Events.Single(i => i.Event.Id == "ticketmaster:r2").Score;
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Choose(client, Rane, "Declined")).StatusCode);
+        var detail = (await client.GetAsync<GroupDetail>($"/api/groups/events?key={Uri.EscapeDataString(Rane)}"))!;
+        Assert.Equal(Reaction.Saved, detail.Events.Single(i => i.Event.Id == "ticketmaster:r1").Reaction);
+        Assert.All(detail.Events.Where(i => i.Event.Id != "ticketmaster:r1"), i => Assert.Equal(Reaction.NotInterested, i.Reaction));
+        Assert.Equal(scoreBefore, detail.Events.Single(i => i.Event.Id == "ticketmaster:r2").Score); // nothing learned
+
+        // A new date turns up later: it's shown.
+        factory.Ticketmaster.Body = TicketmasterJson.Page(
+            TicketmasterJson.Event("r4", "Oplev Rane Willerslev", date: "2099-05-05", city: "Aalborg", segment: "Miscellaneous", genre: "Lecture/Seminar", performers: ["Rane Willerslev"]));
+        await factory.ScanAsync();
+        var rane = (await Groups(client, "inbox"))!.Groups.Single(g => g.Key == Rane);
+        Assert.Equal(new DateOnly(2099, 3, 2), rane.From); // r1 (saved) and the new r4
+        Assert.Equal(2, rane.Dates);
+
+        // Undo brings the declined dates back.
+        await Choose(client, Rane, null);
+        Assert.Equal(4, (await Groups(client, "inbox"))!.Groups.Single(g => g.Key == Rane).Dates);
+    }
+
+    [Fact]
     public async Task Choosing_teaches_like_saving()
     {
         var (factory, client) = await WithEventsAsync();

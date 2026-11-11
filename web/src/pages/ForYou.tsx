@@ -16,7 +16,12 @@ export default function ForYou() {
       {groups && (
         <GroupList groups={groups} onChoice={choose} empty="Du har ikke valgt noget til endnu. Tryk “Vælg til” under Siden sidst." />
       )}
-      {removed && <UndoBar text={`Fjernet: ${removed.title} – alle datoer`} onUndo={undo} />}
+      {removed && (
+        <UndoBar
+          text={`Fjernet: ${removed.group.title}${removed.all ? ' – også fremtidige datoer' : ''}`}
+          onUndo={undo}
+        />
+      )}
     </section>
   );
 }

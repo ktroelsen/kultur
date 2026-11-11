@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft, Ban, Plus, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
@@ -92,8 +92,11 @@ export default function Group() {
                 <button onClick={() => choose('Chosen')} className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:bg-accent-strong">
                   <Plus className="h-4 w-4" /> Vælg til
                 </button>
-                <button onClick={() => choose('Dismissed')} className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-muted hover:text-fg">
-                  <X className="h-4 w-4" /> Nej tak til alle datoer
+                <button onClick={() => choose('Declined')} title="Fjern de datoer, der står her" className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-muted hover:text-fg">
+                  <X className="h-4 w-4" /> Nej tak
+                </button>
+                <button onClick={() => choose('Dismissed')} title="Arrangementet uanset dato og sted – også fremtidige datoer" className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-muted hover:text-fg">
+                  <Ban className="h-4 w-4" /> Nej tak alle
                 </button>
               </>
             )}

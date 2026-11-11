@@ -162,8 +162,11 @@ export type EventGroup = {
 export type GroupView = 'inbox' | 'chosen';
 export type GroupList = { lastVisitUtc: string | null; groups: EventGroup[] };
 export type GroupDetail = { group: EventGroup | null; key: string; chosen: boolean; dismissed: boolean; events: EventItem[] };
-/** Chosen: "Vælg til" (on "Til dig"); Dismissed: "Nej tak" to every date; null: undecided. */
-export type SeriesChoice = 'Chosen' | 'Dismissed';
+/**
+ * Chosen: "Vælg til" (on "Til dig"). Declined: "Nej tak" – the dates shown now. Dismissed: "Nej tak alle" –
+ * the event whatever the date and place, also later dates. null: undecided.
+ */
+export type SeriesChoice = 'Chosen' | 'Declined' | 'Dismissed';
 
 export const fetchGroups = (view: GroupView) => api<GroupList>(`/api/groups?view=${view}`);
 export const fetchGroup = (key: string) => api<GroupDetail>(`/api/groups/events?key=${encodeURIComponent(key)}`);

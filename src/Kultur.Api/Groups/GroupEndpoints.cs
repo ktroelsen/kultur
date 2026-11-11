@@ -72,11 +72,14 @@ public static class GroupEndpoints
                 dates.Select(x => x.Item).OrderBy(i => i.Event.Date ?? DateOnly.MaxValue).ThenBy(i => i.Event.Start).ToList()));
         });
 
-        groups.MapPut("/choice", async (ChoiceRequest body, ClaimsPrincipal user, EventCatalog catalog, UserData data, CancellationToken ct) =>
+        groups.MapPut("/choice", async (ChoiceRequest body, ClaimsPrincipal user, EventJudge judge, UserData data, CancellationToken ct) =>
         {
-            var dates = (await catalog.AllAsync(ct)).Where(e => Series.KeyOf(e) == body.Key).ToList();
+            var userId = Users.Id(user);
+            var dates = (await judge.JudgeAsync(userId, ct)).Events.Where(x => Series.KeyOf(x.Item.Event) == body.Key).ToList();
             if (dates.Count == 0) return Results.NotFound();
-            await data.SetSeriesChoiceAsync(Users.Id(user), body.Key, dates[0], body.Choice, ct);
+            // "Nej tak" turns down the dates the group shows now.
+            var current = dates.Where(x => !x.TurnedDown).Select(x => x.Item.Event.Id).ToList();
+            await data.SetSeriesChoiceAsync(userId, body.Key, dates[0].Item.Event, body.Choice, current, ct);
             return Results.NoContent();
         });
     }

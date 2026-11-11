@@ -39,7 +39,12 @@ export default function SinceLast() {
           ]}
         />
       )}
-      {removed && <UndoBar text={`Fjernet: ${removed.title} – alle datoer`} onUndo={undo} />}
+      {removed && (
+        <UndoBar
+          text={`Fjernet: ${removed.group.title}${removed.all ? ' – også fremtidige datoer' : ''}`}
+          onUndo={undo}
+        />
+      )}
     </section>
   );
 }
