@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { errorMessage, fetchGroups, setChoice, type EventGroup, type GroupView, type SeriesChoice } from './api';
 
+// The last list per view, so coming back shows it at once (and scroll can be restored) while a
+// fresh copy is fetched.
+const cache = new Map<GroupView, { groups: EventGroup[]; lastVisit: string | null }>();
+
 // A grouped list ("Siden sidst" or "Til dig"). Choosing or turning down a group takes it off the list
 // at once; it comes back if the server says no.
 export function useGroups(view: GroupView) {
-  const [groups, setGroups] = useState<EventGroup[] | null>(null);
-  const [lastVisit, setLastVisit] = useState<string | null>(null);
+  const [groups, setGroups] = useState<EventGroup[] | null>(cache.get(view)?.groups ?? null);
+  const [lastVisit, setLastVisit] = useState<string | null>(cache.get(view)?.lastVisit ?? null);
   const [error, setError] = useState<string | null>(null);
   // The group just turned down, for "Fortryd".
   const [removed, setRemoved] = useState<{ group: EventGroup; all: boolean } | null>(null);
@@ -14,6 +18,7 @@ export function useGroups(view: GroupView) {
     setError(null);
     try {
       const list = await fetchGroups(view);
+      cache.set(view, { groups: list.groups, lastVisit: list.lastVisitUtc });
       setGroups(list.groups);
       setLastVisit(list.lastVisitUtc);
     } catch (err) {
@@ -29,6 +34,8 @@ export function useGroups(view: GroupView) {
     const before = groups;
     const group = groups?.find((g) => g.key === key) ?? null;
     setGroups((list) => list?.filter((g) => g.key !== key) ?? null);
+    const cached = cache.get(view);
+    if (cached) cache.set(view, { ...cached, groups: cached.groups.filter((g) => g.key !== key) });
     try {
       await setChoice(key, choice);
       setRemoved(group && (choice === 'Dismissed' || choice === 'Declined') ? { group, all: choice === 'Dismissed' } : null);
@@ -36,7 +43,7 @@ export function useGroups(view: GroupView) {
       setGroups(before);
       setError(errorMessage(err, 'Kunne ikke gemme dit valg.'));
     }
-  }, [groups]);
+  }, [groups, view]);
 
   // Brings the group just turned down back (all its dates).
   const undo = useCallback(async () => {
