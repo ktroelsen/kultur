@@ -50,6 +50,8 @@ public class KulturFactory : WebApplicationFactory<Program>
 
     readonly string _dataDir = Path.Combine(Path.GetTempPath(), "kultur-tests", Guid.NewGuid().ToString("n"));
 
+    public string DataDir => _dataDir;
+
     public FakeTicketmaster Ticketmaster { get; } = new();
     public FakeSite OriginalTalks { get; } = new();
 

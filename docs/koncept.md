@@ -100,6 +100,14 @@ festivaler og IMAX-events tages med i første omgang.
 - **Billetsalgsstart** er førsteklasses – især for sport (landskampe, slutrunder, Denmark Open),
   der bliver udsolgt hurtigt.
 
+## Steder at holde øje med
+
+Nogle steder har hverken API eller feed, men et program på deres egen hjemmeside. Én gang om ugen
+læser Claude programmet (kun stedets egne sider) og gemmer arrangementerne som fakta med link
+tilbage. I dag: **Arena di Verona** (operafestivalen m.m., zone 3) og **Planetariet** (foredrag,
+koncerter, særarrangementer og premierer – ikke de daglige kuppelfilm). Flere steder tilføjes ved at
+skrive dem på listen.
+
 ## Grupper
 
 Et arrangement med mange datoer (en turné, et foredrag rundt i landet, et løb år efter år) vises som

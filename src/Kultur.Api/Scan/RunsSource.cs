@@ -191,11 +191,18 @@ public partial class RunsSource(AnthropicClient client, IOptions<AiOptions> ai, 
             Series: $"runs:{Slug(race.Name)}");
     }
 
-    static string Slug(string name) => SlugChars().Replace(name.ToLowerInvariant().Replace("ø", "oe").Replace("æ", "ae").Replace("å", "aa"), "-").Trim('-');
-
-    [GeneratedRegex("[^a-z0-9]+")]
-    private static partial Regex SlugChars();
+    static string Slug(string name) => Slugs.Of(name);
 }
 
 /// <summary>Where sources keep their own small state files (under App_Data).</summary>
-public record StatePath(string Runs);
+public record StatePath(string Runs, string Venues);
+
+/// <summary>"Berlin Marathon" → "berlin-marathon"; Danish letters spelled out.</summary>
+public static partial class Slugs
+{
+    public static string Of(string name) =>
+        NonWord().Replace(name.ToLowerInvariant().Replace("ø", "oe").Replace("æ", "ae").Replace("å", "aa"), "-").Trim('-');
+
+    [GeneratedRegex("[^a-z0-9]+")]
+    private static partial Regex NonWord();
+}

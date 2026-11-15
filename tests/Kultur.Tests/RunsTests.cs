@@ -17,6 +17,14 @@ namespace Kultur.Tests;
 public partial class FakeClaude : HttpMessageHandler
 {
     public Func<string, string> Answer { get; set; } = _ => """{"editions": []}""";
+
+    /// <summary>When set, answers from the whole prompt (venue look-ups); otherwise Answer gets the race name.</summary>
+    public Func<string, string>? AnswerPrompt { get; set; }
+
+    public List<JsonObject> RaceRequests
+    {
+        get { lock (Requests) return Requests.Where(r => r["messages"]![0]!["content"]!.ToString().Contains("next editions of")).ToList(); }
+    }
     public List<JsonObject> Requests { get; } = [];
 
     [GeneratedRegex(@"next editions of (.+?) \(")]
@@ -31,7 +39,7 @@ public partial class FakeClaude : HttpMessageHandler
         var message = new Dictionary<string, object?>
         {
             ["id"] = $"msg_{Guid.NewGuid():n}", ["type"] = "message", ["role"] = "assistant", ["model"] = "claude-opus-5-5",
-            ["content"] = new object[] { new { type = "text", text = Answer(race), citations = (object?)null } },
+            ["content"] = new object[] { new { type = "text", text = AnswerPrompt?.Invoke(prompt) ?? Answer(race), citations = (object?)null } },
             ["stop_reason"] = "end_turn", ["stop_sequence"] = null, ["stop_details"] = null, ["container"] = null,
             ["context_management"] = null,
             ["usage"] = new Dictionary<string, object?>
@@ -49,7 +57,7 @@ public partial class FakeClaude : HttpMessageHandler
 
 public class RunsTests
 {
-    static (KulturFactory Factory, WebApplicationFactory<Program> App, FakeClaude Claude) WithClaude()
+    internal static (KulturFactory Factory, WebApplicationFactory<Program> App, FakeClaude Claude) WithClaude()
     {
         var factory = new KulturFactory();
         var claude = new FakeClaude();
@@ -64,7 +72,7 @@ public class RunsTests
 
     static string Editions(params object[] editions) => "Her er det:\n```json\n" + JsonSerializer.Serialize(new { editions }) + "\n```";
 
-    static async Task<HttpClient> LoginAsync(WebApplicationFactory<Program> app)
+    internal static async Task<HttpClient> LoginAsync(WebApplicationFactory<Program> app)
     {
         var client = app.CreateClient();
         (await client.PostAsJsonAsync("/api/auth/login", new { password = KulturFactory.Password })).EnsureSuccessStatusCode();
@@ -98,8 +106,8 @@ public class RunsTests
         Assert.Null(runs.Error);
         Assert.Equal(2, runs.Fetched); // the past edition and the race not on the list are dropped
 
-        Assert.Equal(new RunsOptions().Races.Count, claude.Requests.Count);
-        var request = claude.Requests[0];
+        Assert.Equal(new RunsOptions().Races.Count, claude.RaceRequests.Count);
+        var request = claude.RaceRequests[0];
         Assert.Equal("claude-opus-5-5", request["model"]!.GetValue<string>());
         var tool = request["tools"]![0]!;
         Assert.Equal("web_search_20260209", tool["type"]!.GetValue<string>());
@@ -133,9 +141,9 @@ public class RunsTests
 
         var client = await LoginAsync(app);
         await client.PostAsync("/api/scan", null);
-        var first = claude.Requests.Count;
+        var first = claude.RaceRequests.Count;
         await client.PostAsync("/api/scan", null);
-        Assert.Equal(first, claude.Requests.Count);
+        Assert.Equal(first, claude.RaceRequests.Count);
         Assert.Contains((await client.GetAsync<EventList>("/api/events"))!.Events, i => i.Event.Id == "runs:berlin-marathon-2099");
     }
 
