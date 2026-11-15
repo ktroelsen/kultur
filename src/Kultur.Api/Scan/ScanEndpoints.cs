@@ -37,6 +37,7 @@ public static class ScanEndpoints
                 var now = clock.GetUtcNow();
                 var results = new List<SourceResult>();
                 var fresh = new List<CultureEvent>();
+                var replaces = new List<string>();
                 foreach (var source in sources)
                 {
                     if (!source.Configured)
@@ -48,6 +49,7 @@ public static class ScanEndpoints
                     {
                         var events = await source.FetchAsync(now, ct);
                         fresh.AddRange(events);
+                        replaces.AddRange(source.Replaces);
                         results.Add(new SourceResult(source.Name, events.Count, null));
                     }
                     catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
@@ -57,7 +59,7 @@ public static class ScanEndpoints
                         results.Add(new SourceResult(source.Name, 0, ex.Message));
                     }
                 }
-                var added = await catalog.MergeAsync(fresh, ct);
+                var added = await catalog.MergeAsync(fresh, replaces, ct);
                 return Results.Ok(new ScanResult(results, added, (await catalog.AllAsync(ct)).Count));
             }
             finally

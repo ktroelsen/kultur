@@ -46,8 +46,10 @@ builder.Services.AddSingleton(sp => AiOptions.CreateClient(
     sp.GetRequiredService<IOptions<AiOptions>>().Value,
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("anthropic")));
 builder.Services.Configure<RunsOptions>(builder.Configuration.GetSection("Runs"));
-builder.Services.AddSingleton(new StatePath(Runs: Path.Combine(dataDir, "runs.json")));
+builder.Services.AddSingleton(new StatePath(Runs: Path.Combine(dataDir, "runs.json"), Venues: Path.Combine(dataDir, "venues.json")));
 builder.Services.AddTransient<IEventSource, RunsSource>();
+builder.Services.Configure<VenuesOptions>(builder.Configuration.GetSection("Venues"));
+builder.Services.AddTransient<IEventSource, VenueSource>();
 
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));

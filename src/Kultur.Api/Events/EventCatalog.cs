@@ -20,12 +20,25 @@ public class EventCatalog(string path, TimeProvider clock)
     /// Adds new events and refreshes known ones (keeping when they were first seen), and drops
     /// events that are over. Returns how many were new.
     /// </summary>
-    public async Task<int> MergeAsync(IEnumerable<CultureEvent> fresh, CancellationToken ct = default)
+    public async Task<int> MergeAsync(IEnumerable<CultureEvent> fresh, CancellationToken ct = default) =>
+        await MergeAsync(fresh, [], ct);
+
+    /// <param name="replaces">Id prefixes the fresh events cover completely: known events under them
+    /// that aren't among the fresh ones are dropped.</param>
+    public async Task<int> MergeAsync(IEnumerable<CultureEvent> fresh, IReadOnlyCollection<string> replaces, CancellationToken ct = default)
     {
         await _lock.WaitAsync(ct);
         try
         {
             var byId = (await LoadAsync(ct)).ToDictionary(e => e.Id);
+            var freshList = fresh.ToList();
+            if (replaces.Count > 0)
+            {
+                var freshIds = freshList.Select(e => e.Id).ToHashSet();
+                foreach (var stale in byId.Keys.Where(id => !freshIds.Contains(id) && replaces.Any(id.StartsWith)).ToList())
+                    byId.Remove(stale);
+            }
+            fresh = freshList;
             var added = 0;
             foreach (var e in fresh)
             {
