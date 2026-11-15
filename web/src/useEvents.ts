@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { errorMessage, fetchEvents, setReaction, type DismissReason, type EventItem, type EventView, type Reaction } from './api';
 
+const cache = new Map<EventView, { items: EventItem[]; lastVisit: string | null }>();
+
 // One list of events plus Gem / Måske / Nej tak, updated at once and rolled back if the server says no.
 export function useEvents(view: EventView) {
-  const [items, setItems] = useState<EventItem[] | null>(null);
-  const [lastVisit, setLastVisit] = useState<string | null>(null);
+  const [items, setItems] = useState<EventItem[] | null>(cache.get(view)?.items ?? null);
+  const [lastVisit, setLastVisit] = useState<string | null>(cache.get(view)?.lastVisit ?? null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
       const list = await fetchEvents(view);
+      cache.set(view, { items: list.events, lastVisit: list.lastVisitUtc });
       setItems(list.events);
       setLastVisit(list.lastVisitUtc);
       return list;
