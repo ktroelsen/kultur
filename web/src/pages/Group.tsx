@@ -1,5 +1,6 @@
 import { ArrowLeft, Ban, Plus, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import type { EventItem } from '../api';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
   categoryNames,
@@ -13,7 +14,8 @@ import {
   type SeriesChoice,
 } from '../api';
 import EventCard from '../components/EventCard';
-import { dateRange, genreName } from '../format';
+import UndoBar from '../components/UndoBar';
+import { dateRange, genreName, when, where } from '../format';
 
 // One event and every one of its dates. Save the date you'll go to, drop the ones you won't – a dropped
 // date stays listed (faded) so it can be brought back.
@@ -23,6 +25,9 @@ export default function Group() {
   const navigate = useNavigate();
   const [detail, setDetail] = useState<GroupDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The date just turned down, for "Fortryd"; and whether turned-down dates are shown.
+  const [removed, setRemoved] = useState<EventItem | null>(null);
+  const [showDeclined, setShowDeclined] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -36,9 +41,20 @@ export default function Group() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!removed) return;
+    const timer = setTimeout(() => setRemoved(null), 8000);
+    return () => clearTimeout(timer);
+  }, [removed]);
+
   async function react(id: string, reaction: Reaction | null, reason?: DismissReason | null) {
+    const item = detail?.events.find((i) => i.event.id === id) ?? null;
+    // Gone from the list at once; the server's answer follows.
+    if (reaction === 'NotInterested' && detail)
+      setDetail({ ...detail, events: detail.events.map((i) => (i.event.id === id ? { ...i, reaction } : i)) });
     try {
       await setReaction(id, reaction, reason ?? null);
+      setRemoved(reaction === 'NotInterested' && !reason ? item : null);
       await load();
     } catch (err) {
       setError(errorMessage(err, 'Kunne ikke gemme dit valg.'));
@@ -56,6 +72,9 @@ export default function Group() {
 
   const first = detail?.events[0]?.event;
   const g = detail?.group;
+  // A date turned down leaves the list; it can be shown again below.
+  const live = detail?.events.filter((i) => i.reaction !== 'NotInterested') ?? [];
+  const declined = detail?.events.filter((i) => i.reaction === 'NotInterested') ?? [];
 
   return (
     <section>
@@ -104,11 +123,38 @@ export default function Group() {
 
           <h2 className="mt-8 mb-3 text-sm font-medium tracking-wide text-muted uppercase">Datoer</h2>
           <div className="space-y-4">
-            {detail.events.map((item) => (
+            {live.length === 0 && <div className="rounded-2xl bg-surface p-6 text-muted">Ingen datoer tilbage.</div>}
+            {live.map((item) => (
               <EventCard key={item.event.id} item={item} onReact={(r, reason) => react(item.event.id, r, reason)} />
             ))}
           </div>
+
+          {declined.length > 0 && (
+            <div className="mt-6">
+              <button onClick={() => setShowDeclined((v) => !v)} className="text-sm text-muted underline hover:text-fg">
+                {showDeclined
+                  ? 'Skjul fravalgte datoer'
+                  : `Vis ${declined.length === 1 ? '1 fravalgt dato' : `${declined.length} fravalgte datoer`}`}
+              </button>
+              {showDeclined && (
+                <div className="mt-3 space-y-4">
+                  {declined.map((item) => (
+                    <EventCard key={item.event.id} item={item} onReact={(r, reason) => react(item.event.id, r, reason)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
+      )}
+      {removed && (
+        <UndoBar
+          text={`Fjernet: ${when(removed.event)}${where(removed.event) ? `, ${where(removed.event)}` : ''}`}
+          onUndo={() => {
+            setRemoved(null);
+            react(removed.event.id, null);
+          }}
+        />
       )}
     </section>
   );
