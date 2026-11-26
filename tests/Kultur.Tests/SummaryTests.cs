@@ -131,11 +131,12 @@ public class SummaryTests
             summary.Items);
         Assert.Empty(summary.Notes);
 
-        // The badge is "Siden sidst" as the app itself shows it.
+        // The badge counts the new groups in "Siden sidst", as the app itself shows them.
         var inbox = (await client.GetAsync<GroupList>("/api/groups?view=inbox"))!.Groups;
-        Assert.NotEmpty(inbox);
         Assert.Contains(inbox, g => g.Key == "title:uafklaret");
-        Assert.Equal($"{inbox.Count} nye", summary.Badge);
+        var fresh = inbox.Count(g => g.IsNew);
+        Assert.True(fresh > 0);
+        Assert.Equal($"{fresh} nye", summary.Badge);
     }
 
     [Fact]

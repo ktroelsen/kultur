@@ -76,11 +76,12 @@ public static class SummaryEndpoint
             items.Add((date, time, new SummaryItem($"Billetsalget åbner: {first.Title}", detail, Day(date), time, Link(sale.Key.Series))));
         }
 
-        var inbox = GroupEndpoints.List(j, GroupView.Inbox).Count();
+        // "nye": the groups in "Siden sidst" that are new since the last visit (IsNew), not every undecided one.
+        var fresh = GroupEndpoints.List(j, GroupView.Inbox).Count(g => g.IsNew);
         return new Summary(
             items.OrderBy(i => i.Date).ThenBy(i => i.Time ?? "").ThenBy(i => i.Item.Title, StringComparer.CurrentCulture).Select(i => i.Item).ToList(),
             [],
-            inbox > 0 ? $"{inbox} nye" : null);
+            fresh > 0 ? $"{fresh} nye" : null);
     }
 
     static string? Place(CultureEvent e) =>
