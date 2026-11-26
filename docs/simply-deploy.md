@@ -37,6 +37,7 @@ hver nat 02:17 UTC ─► Nightly scan ─► POST https://kultur.kaspert.dk/api
 | `KULTUR_SCAN_KEY` | lang tilfældig streng | Den natlige scanning (`X-Scan-Key`) |
 | `ANTHROPIC_API_KEY` | `sk-ant-…` | Claude: løb (ugentligt opslag med websøgning). Uden den springes løb over. |
 | `TICKETMASTER_API_KEY` | "Consumer Key" fra developer.ticketmaster.com | Ticketmaster-kilden. Uden den springes kilden over. |
+| `SUMMARY_KEY` | samme lange tilfældige nøgle som i kaspert og de andre apps | kaspert.dk's "I dag" (`X-Api-Key` på `GET /api/integration/summary`). Svarer for brugeren `owner` (sat i workflowet). |
 | `CLAUDE_CODE_0AUTH_TOKEN` | (som i read) | `@claude` i issues/PR'er |
 
 Røgtest efter deploy (Simplys firewall afviser curls egen User-Agent med 455):

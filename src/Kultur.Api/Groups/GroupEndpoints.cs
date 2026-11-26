@@ -42,20 +42,7 @@ public static class GroupEndpoints
                 return Results.Problem("Ukendt visning.", statusCode: 400);
 
             var j = await judge.JudgeAsync(Users.Id(user), ct);
-            var result = j.Events
-                .GroupBy(x => Series.KeyOf(x.Item.Event))
-                .Select(g => Summarize(g.Key, g.ToList(), j.Learning))
-                .OfType<EventGroup>();
-
-            result = parsed == GroupView.Chosen
-                ? result.Where(g => g.Chosen).OrderBy(g => g.From ?? DateOnly.MaxValue)
-                : result
-                    .Where(g => !g.Chosen)
-                    .Where(g => !j.UseZones || g.Score >= EventEndpoints.MinScore(g.Zone))
-                    .OrderByDescending(g => g.IsNew)
-                    .ThenBy(g => g.Zone)
-                    .ThenByDescending(g => g.Score)
-                    .ThenBy(g => g.From ?? DateOnly.MaxValue);
+            var result = List(j, parsed);
             return Results.Ok(new GroupList(j.LastVisitUtc, result.Take(MaxGroups).ToList()));
         });
 
@@ -82,6 +69,28 @@ public static class GroupEndpoints
             await data.SetSeriesChoiceAsync(userId, body.Key, dates[0].Item.Event, body.Choice, current, ct);
             return Results.NoContent();
         });
+    }
+
+    /// <summary>
+    /// The groups of a view: "Siden sidst" (inbox) is every undecided group that passes the zone
+    /// thresholds, new ones first; "Til dig" (chosen) the chosen ones by first date. Not capped.
+    /// </summary>
+    public static IEnumerable<EventGroup> List(Judgement j, GroupView view)
+    {
+        var result = j.Events
+            .GroupBy(x => Series.KeyOf(x.Item.Event))
+            .Select(g => Summarize(g.Key, g.ToList(), j.Learning))
+            .OfType<EventGroup>();
+
+        return view == GroupView.Chosen
+            ? result.Where(g => g.Chosen).OrderBy(g => g.From ?? DateOnly.MaxValue)
+            : result
+                .Where(g => !g.Chosen)
+                .Where(g => !j.UseZones || g.Score >= EventEndpoints.MinScore(g.Zone))
+                .OrderByDescending(g => g.IsNew)
+                .ThenBy(g => g.Zone)
+                .ThenByDescending(g => g.Score)
+                .ThenBy(g => g.From ?? DateOnly.MaxValue);
     }
 
     /// <summary>

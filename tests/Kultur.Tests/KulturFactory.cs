@@ -41,6 +41,12 @@ public class FakeSite : HttpMessageHandler
     }
 }
 
+// A clock standing still at a given moment.
+public class FixedClock(DateTimeOffset now) : TimeProvider
+{
+    public override DateTimeOffset GetUtcNow() => now;
+}
+
 // Boots the real API against a throwaway App_Data dir with a known password and scan key,
 // and a fake Ticketmaster.
 public class KulturFactory : WebApplicationFactory<Program>
@@ -53,6 +59,12 @@ public class KulturFactory : WebApplicationFactory<Program>
     public FakeTicketmaster Ticketmaster { get; } = new();
     public FakeSite OriginalTalks { get; } = new();
 
+    /// <summary>Extra settings, applied when the app starts (set them before the first client).</summary>
+    public Dictionary<string, string?> Settings { get; } = [];
+
+    /// <summary>The app's clock, when a test needs to say what "now" is (set before the first client).</summary>
+    public TimeProvider? Clock { get; set; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -64,10 +76,12 @@ public class KulturFactory : WebApplicationFactory<Program>
         builder.UseSetting("Ticketmaster:Months", "1");
         builder.UseSetting("Ticketmaster:DelayMs", "0");
         builder.UseSetting("OriginalTalks:DelayMs", "0");
+        foreach (var (key, value) in Settings) builder.UseSetting(key, value);
         builder.ConfigureTestServices(s =>
         {
             s.AddHttpClient<TicketmasterSource>().ConfigurePrimaryHttpMessageHandler(() => Ticketmaster);
             s.AddHttpClient<OriginalTalksSource>().ConfigurePrimaryHttpMessageHandler(() => OriginalTalks);
+            if (Clock is not null) s.AddSingleton(Clock);
         });
     }
 

@@ -4,6 +4,7 @@ using Kultur.Api.Ai;
 using Kultur.Api.Auth;
 using Kultur.Api.Events;
 using Kultur.Api.Groups;
+using Kultur.Api.Integration;
 using Kultur.Api.Profile;
 using Kultur.Api.Scan;
 using Kultur.Api.Taste;
@@ -69,8 +70,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // This is an API for a SPA: answer 401/403 instead of redirecting to a login page.
         o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
         o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
-    });
-builder.Services.AddAuthorization();
+    })
+    // kaspert.dk's "I dag": its key (X-Api-Key) opens only GET /api/integration/summary.
+    .AddScheme<ApiKeyOptions, ApiKeyHandler>(ApiKeyHandler.SummaryScheme, o => (o.ConfigKey, o.Caller) = ("Integrations:Kaspert:ApiKey", "kaspert"));
+builder.Services.AddAuthorization(o =>
+    o.AddPolicy(ApiKeyHandler.SummaryPolicy, p => p.AddAuthenticationSchemes(ApiKeyHandler.SummaryScheme).RequireAuthenticatedUser()));
 
 // Brute-force protection on the single-password login.
 var loginAttemptsPerMinute = builder.Configuration.GetValue("Auth:LoginAttemptsPerMinute", 5);
@@ -123,6 +127,7 @@ app.MapEventEndpoints();
 app.MapGroupEndpoints();
 app.MapProfileEndpoints(usersDir);
 app.MapScanEndpoints();
+app.MapSummaryEndpoint();
 app.MapTasteEndpoints();
 
 // Unknown /api routes are real 404s; everything else is a client-side route → index.html.

@@ -25,11 +25,11 @@ public static class AuthEndpoints
             if (!PasswordMatches(body.Password ?? "", expected))
                 return Results.Unauthorized();
 
-            var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, "owner")],
+            var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, Users.Owner)],
                 CookieAuthenticationDefaults.AuthenticationScheme);
             await http.SignInAsync(new ClaimsPrincipal(identity),
                 new AuthenticationProperties { IsPersistent = true });
-            return Results.Ok(new MeResponse("owner"));
+            return Results.Ok(new MeResponse(Users.Owner));
         }).RequireRateLimiting(LoginRateLimit);
 
         auth.MapPost("/logout", async (HttpContext http) =>
