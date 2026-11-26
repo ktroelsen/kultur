@@ -15,7 +15,7 @@ public static class TicketmasterJson
 
     public static string Event(string id, string name, string date = "2099-03-14", string city = "København K",
         string country = "DK", string segment = "Music", string genre = "Rock", string venue = "Vega",
-        string[]? performers = null) => $$"""
+        string[]? performers = null, string saleStart = "2098-11-01T09:00:00Z") => $$"""
         {
           "id": "{{id}}",
           "name": "{{name}}",
@@ -25,7 +25,7 @@ public static class TicketmasterJson
             { "ratio": "16_9", "url": "https://img/card.jpg", "width": 640 },
             { "ratio": "4_3", "url": "https://img/other.jpg", "width": 640 }
           ],
-          "sales": { "public": { "startDateTime": "2098-11-01T09:00:00Z" } },
+          "sales": { "public": { "startDateTime": "{{saleStart}}" } },
           "dates": { "start": { "localDate": "{{date}}", "dateTime": "{{date}}T19:00:00Z" } },
           "classifications": [ { "segment": { "name": "{{segment}}" }, "genre": { "name": "{{genre}}" } } ],
           "priceRanges": [ { "type": "standard", "currency": "DKK", "min": 345.0, "max": 495.0 } ],

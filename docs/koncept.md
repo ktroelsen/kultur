@@ -128,6 +128,8 @@ Samme opskrift som Læs højt:
   Actions-cron kalder `POST /api/scan` med en hemmelig nøgle; scanningen henter kilder, kører
   overvågninger og opdaterer forslag.
 - Hemmeligheder fra GitHub Secrets (environment `Production`) → `appsettings.Production.json`.
+- **kaspert.dk's "I dag"** læser `GET /api/integration/summary` med sin egen nøgle (kun læsning): mine
+  gemte og valgte datoer og billetsalgsstarter de næste 7 dage, og hvor mange grupper "Siden sidst" har.
 
 ## Versioner
 

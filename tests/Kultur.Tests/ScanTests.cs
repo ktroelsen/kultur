@@ -82,7 +82,9 @@ public class ScanTests
     [Fact]
     public async Task A_month_with_more_than_1000_events_is_split_and_events_are_not_doubled()
     {
-        using var factory = new KulturFactory();
+        // A fixed early-in-the-month clock: with the real date, the last week of a month leaves a first window
+        // shorter than a week, which the fake below never makes "too big", so nothing was split.
+        using var factory = new KulturFactory { Clock = new FixedClock(new DateTimeOffset(2099, 3, 2, 10, 0, 0, TimeSpan.Zero)) };
         // Over 1000 events while the window is longer than a week; otherwise one page of two events,
         // one of which shows up in every window.
         factory.Ticketmaster.Respond = uri =>
