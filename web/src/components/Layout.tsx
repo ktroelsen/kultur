@@ -1,6 +1,8 @@
 import { Bookmark, Heart, LogOut, SlidersHorizontal, Sparkles, UserRound, type LucideIcon } from 'lucide-react';
+import { useRef } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { useAuth } from '../auth';
+import { useScrollMemory } from '../scroll';
 import Logo from './Logo';
 
 const nav: { to: string; label: string; icon: LucideIcon }[] = [
@@ -14,6 +16,8 @@ const nav: { to: string; label: string; icon: LucideIcon }[] = [
 // Mobile: top bar + bottom tab bar. Desktop: the same links in the top bar.
 export default function Layout() {
   const { logout } = useAuth();
+  const main = useRef<HTMLElement>(null);
+  useScrollMemory(main);
 
   return (
     <div className="flex h-full flex-col">
@@ -43,7 +47,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-10">
+      <main ref={main} className="flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-10">
         <div className="mx-auto max-w-3xl px-4 py-6 md:py-10">
           <Outlet />
         </div>
